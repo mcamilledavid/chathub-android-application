@@ -23,20 +23,40 @@
         android:layout_alignParentBottom="true"
         android:layout_alignParentLeft="true"
         android:layout_alignParentStart="true"
-        android:orientation="horizontal">
+        android:orientation="vertical">
 
         <EditText
             android:id="@+id/messageEditText"
-            android:layout_width="0dp"
+            android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_gravity="center_vertical"
-            android:layout_weight="1"/>
+            android:inputType="textMultiLine"
+            android:paddingTop="20dp"/>
+        <LinearLayout
+            android:orientation="horizontal"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
 
-        <android.support.design.widget.FloatingActionButton
-            android:id="@+id/sendButton"
-            android:layout_height="wrap_content"
-            android:layout_width="wrap_content"
-            android:src="@drawable/ic_send_black_24"/>
+            <View
+                android:layout_width="0dp"
+                android:layout_height="0dp"
+                android:layout_weight="1"/>
+
+            <ImageButton
+                android:id="@+id/shareImageButton"
+                android:src="@drawable/ic_image_black_24px"
+                android:background="@android:color/transparent"
+                android:layout_gravity="center"
+                android:padding="16dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+
+            <android.support.design.widget.FloatingActionButton
+                android:id="@+id/sendButton"
+                android:layout_height="wrap_content"
+                android:layout_width="wrap_content"
+                android:src="@drawable/ic_send_black_24"/>
+        </LinearLayout>
+
     </LinearLayout>
 
     <ProgressBar

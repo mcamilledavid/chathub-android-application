@@ -47,12 +47,11 @@ dependencies {
     // Firebase
     compile 'com.google.firebase:firebase-database:9.0.0'
     compile 'com.google.firebase:firebase-auth:9.0.0'
-    compile 'com.google.firebase:firebase-config:9.0.0'
-    compile 'com.google.android.gms:play-services-appinvite:9.0.0'
     compile 'com.google.firebase:firebase-messaging:9.0.0'
-    compile 'com.google.firebase:firebase-crash:9.0.0'
     // Firebase UI
     compile 'com.firebaseui:firebase-ui-database:0.4.0'
+    compile 'com.google.firebase:firebase-storage:9.0.0'
+
 
     // Testing dependencies
     androidTestCompile 'junit:junit:4.12'

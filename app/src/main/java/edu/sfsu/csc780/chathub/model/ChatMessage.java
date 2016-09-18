@@ -15,11 +15,19 @@
  */
 package edu.sfsu.csc780.chathub.model;
 
+import java.util.Date;
+
 public class ChatMessage {
 
     private String text;
     private String name;
     private String photoUrl;
+
+    public String getImageUrl() {
+        return imageUrl;
+    }
+
+    private String imageUrl;
 
     public ChatMessage() {
     }
@@ -28,6 +36,11 @@ public class ChatMessage {
         this.text = text;
         this.name = name;
         this.photoUrl = photoUrl;
+    }
+
+    public ChatMessage(String text, String name, String photoUrl, String imageUrl) {
+        this(text, name, photoUrl);
+        this.imageUrl = imageUrl;
     }
 
     public String getText() {
