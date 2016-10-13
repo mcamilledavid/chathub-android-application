@@ -23,6 +23,13 @@ public class ChatMessage {
     private String name;
     private String photoUrl;
 
+    public long getTimestamp() {
+        return timestamp;
+    }
+
+    private long timestamp;
+    public static final long NO_TIMESTAMP = -1;
+
     public String getImageUrl() {
         return imageUrl;
     }
@@ -36,6 +43,7 @@ public class ChatMessage {
         this.text = text;
         this.name = name;
         this.photoUrl = photoUrl;
+        this.timestamp = new Date().getTime();
     }
 
     public ChatMessage(String text, String name, String photoUrl, String imageUrl) {

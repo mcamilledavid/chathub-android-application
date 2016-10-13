@@ -70,6 +70,7 @@ public class MainActivity extends AppCompatActivity
     private static final String TAG = "MainActivity";
     public static final String MESSAGES_CHILD = "messages";
     private static final int REQUEST_INVITE = 1;
+    public static final int REQUEST_PREFERENCES = 2;
     public static final int MSG_LENGTH_LIMIT = 64;
     private static final double MAX_LINEAR_DIMENSION = 500.0;
     public static final String ANONYMOUS = "anonymous";
@@ -92,10 +93,12 @@ public class MainActivity extends AppCompatActivity
     private FirebaseRecyclerAdapter<ChatMessage, MessageUtil.MessageViewHolder>
             mFirebaseAdapter;
     private ImageButton mImageButton;
+    private int mSavedTheme;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
+        DesignUtils.applyColorfulTheme(this);
         setContentView(R.layout.activity_main);
         mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
         // Set default username is anonymous.
@@ -218,6 +221,10 @@ public class MainActivity extends AppCompatActivity
                 mUsername = ANONYMOUS;
                 startActivity(new Intent(this, SignInActivity.class));
                 return true;
+            case R.id.preferences_menu:
+                mSavedTheme = DesignUtils.getPreferredTheme(this);
+                Intent i = new Intent(this, PreferencesActivity.class);
+                startActivityForResult(i, REQUEST_PREFERENCES);
             default:
                 return super.onOptionsItemSelected(item);
         }
@@ -275,11 +282,19 @@ public class MainActivity extends AppCompatActivity
             } else {
                 Log.e(TAG, "Cannot get image for uploading");
             }
+        } else if (requestCode == REQUEST_PREFERENCES) {
+            if (DesignUtils.getPreferredTheme(this) != mSavedTheme) {
+                DesignUtils.applyColorfulTheme(this);
+                this.recreate();
+            }
         }
     }
 
     private void createImageMessage(Uri uri) {
-        if (uri == null) Log.e(TAG, "Could not create image message with null uri");
+        if (uri == null) {
+            Log.e(TAG, "Could not create image message with null uri");
+            return;
+        }
 
         final StorageReference imageReference = MessageUtil.getImageStorageReference(mUser, uri);
         UploadTask uploadTask = imageReference.putFile(uri);

@@ -1,8 +1,10 @@
 package edu.sfsu.csc780.chathub.ui;
 
 import android.app.Activity;
+import android.content.SharedPreferences;
 import android.graphics.Bitmap;
 import android.net.Uri;
+import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.LinearLayoutManager;
@@ -50,12 +52,16 @@ public class MessageUtil {
         public ImageView messageImageView;
         public TextView messengerTextView;
         public CircleImageView messengerImageView;
+        public TextView timestampTextView;
+        public View messageLayout;
         public MessageViewHolder(View v) {
             super(v);
             messageTextView = (TextView) itemView.findViewById(R.id.messageTextView);
             messengerTextView = (TextView) itemView.findViewById(R.id.messengerTextView);
             messengerImageView = (CircleImageView) itemView.findViewById(R.id.messengerImageView);
             messageImageView = (ImageView) itemView.findViewById(R.id.messageImageView);
+            timestampTextView = (TextView) itemView.findViewById(R.id.timestampTextView);
+            messageLayout = (View) itemView.findViewById(R.id.messageLayout);
         }
     }
 
@@ -63,6 +69,8 @@ public class MessageUtil {
                                                              MessageLoadListener listener,
                                                              final LinearLayoutManager linearManager,
                                                              final RecyclerView recyclerView) {
+        final SharedPreferences preferences =
+                PreferenceManager.getDefaultSharedPreferences(activity);
         sAdapterListener = listener;
         final FirebaseRecyclerAdapter adapter = new FirebaseRecyclerAdapter<ChatMessage,
                 MessageViewHolder>(
@@ -86,6 +94,18 @@ public class MessageUtil {
                         @Override
                         public void onResourceReady(Bitmap bitmap, GlideAnimation glideAnimation) {
                             viewHolder.messengerImageView.setImageBitmap(bitmap);
+                            final String palettePreference = activity.getString(R.string
+                                    .auto_palette_preference);
+
+                            if (preferences.getBoolean(palettePreference, false)) {
+                                DesignUtils.setBackgroundFromPalette(bitmap, viewHolder
+                                        .messageLayout);
+                            } else {
+                                viewHolder.messageLayout.setBackground(
+                                        activity.getResources().getDrawable(
+                                                R.drawable.message_background));
+                            }
+
                         }
                     };
                     Glide.with(activity)
@@ -123,6 +143,16 @@ public class MessageUtil {
                     viewHolder.messageImageView.setVisibility(View.GONE);
                     viewHolder.messageTextView.setVisibility(View.VISIBLE);
                 }
+
+                long timestamp = chatMessage.getTimestamp();
+                if (timestamp == 0 || timestamp == chatMessage.NO_TIMESTAMP ) {
+                    viewHolder.timestampTextView.setVisibility(View.GONE);
+                } else {
+                    viewHolder.timestampTextView.setText(DesignUtils.formatTime(activity,
+                            timestamp));
+                    viewHolder.timestampTextView.setVisibility(View.VISIBLE);
+                }
+
             }
         };
 

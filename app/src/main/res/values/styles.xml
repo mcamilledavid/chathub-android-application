@@ -16,4 +16,21 @@
         <item name="android:textColor">@color/colorTitle</item>
 
     </style>
+
+    <style name="BlueTheme" parent="AppTheme">
+        <item name="colorPrimary">@color/indigo</item>
+        <item name="colorPrimaryDark">@color/indigo_dark</item>
+        <item name="colorAccent">@color/cyan</item>
+    </style>
+    <style name="GreenTheme" parent="AppTheme">
+        <item name="colorPrimary">@color/green</item>
+        <item name="colorPrimaryDark">@color/green_dark</item>
+        <item name="colorAccent">@color/amber</item>
+    </style>
+    <style name="BlackTheme" parent="AppTheme">
+        <item name="colorPrimary">@color/almost_black</item>
+        <item name="colorPrimaryDark">@color/black</item>
+        <item name="colorAccent">@color/mellow_brown</item>
+    </style>
+
 </resources>
