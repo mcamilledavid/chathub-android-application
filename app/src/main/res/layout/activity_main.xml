@@ -42,9 +42,18 @@
                 android:layout_weight="1"/>
 
             <ImageButton
+                android:id="@+id/locationButton"
+                android:src="@drawable/ic_my_location_black_24px"
+                android:background="@drawable/button_ripple"
+                android:layout_gravity="center_vertical"
+                android:padding="16dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"/>
+
+            <ImageButton
                 android:id="@+id/shareImageButton"
                 android:src="@drawable/ic_image_black_24px"
-                android:background="@android:color/transparent"
+                android:background="@drawable/button_ripple"
                 android:layout_gravity="center"
                 android:padding="16dp"
                 android:layout_width="wrap_content"

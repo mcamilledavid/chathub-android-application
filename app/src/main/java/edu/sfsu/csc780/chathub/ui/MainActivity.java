@@ -18,6 +18,7 @@ package edu.sfsu.csc780.chathub.ui;
 import android.app.Activity;
 import android.content.Intent;
 import android.content.SharedPreferences;
+import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
 import android.net.Uri;
 import android.os.Bundle;
@@ -26,6 +27,8 @@ import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v4.app.LoaderManager;
+import android.support.v4.content.Loader;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -94,6 +97,7 @@ public class MainActivity extends AppCompatActivity
             mFirebaseAdapter;
     private ImageButton mImageButton;
     private int mSavedTheme;
+    private ImageButton mLocationButton;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -181,6 +185,14 @@ public class MainActivity extends AppCompatActivity
                 pickImage();
             }
         });
+
+        mLocationButton = (ImageButton) findViewById(R.id.locationButton);
+        mLocationButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                loadMap();
+            }
+        });
     }
 
     @Override
@@ -198,6 +210,17 @@ public class MainActivity extends AppCompatActivity
     @Override
     public void onResume() {
         super.onResume();
+        LocationUtils.startLocationUpdates(this);
+    }
+
+    @Override
+    public void onRequestPermissionsResult(int requestCode,
+                                           String permissions[], int[] grantResults) {
+        boolean isGranted = (grantResults.length > 0
+                && grantResults[0] == PackageManager.PERMISSION_GRANTED);
+        if (isGranted && requestCode == LocationUtils.REQUEST_CODE) {
+            LocationUtils.startLocationUpdates(this);
+        }
     }
 
     @Override
@@ -379,5 +402,43 @@ public class MainActivity extends AppCompatActivity
                 storageDir              /* directory */
         );
         return imageFile;
+    }
+
+
+    private void loadMap() {
+        Loader<Bitmap> loader = getSupportLoaderManager().initLoader(0, null, new LoaderManager
+                .LoaderCallbacks<Bitmap>() {
+            @Override
+            public Loader<Bitmap> onCreateLoader(final int id, final Bundle args) {
+                return new MapLoader(MainActivity.this);
+            }
+
+            @Override
+            public void onLoadFinished(final Loader<Bitmap> loader, final Bitmap result) {
+                mProgressBar.setVisibility(ProgressBar.INVISIBLE);
+                mLocationButton.setEnabled(true);
+
+                if (result == null) return;
+                // Resize if too big for messaging
+                Bitmap resizedBitmap = scaleImage(result);
+                Uri uri = null;
+                if (result != resizedBitmap) {
+                    uri = savePhotoImage(resizedBitmap);
+                } else {
+                    uri = savePhotoImage(result);
+                }
+                createImageMessage(uri);
+
+            }
+
+            @Override
+            public void onLoaderReset(final Loader<Bitmap> loader) {
+            }
+
+        });
+
+        mProgressBar.setVisibility(ProgressBar.VISIBLE);
+        mLocationButton.setEnabled(false);
+        loader.forceLoad();
     }
 }
