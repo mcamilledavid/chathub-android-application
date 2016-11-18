@@ -4,8 +4,8 @@
     <color name="colorPrimaryDark">#303F9F</color>
     <color name="colorAccent">#FF9800</color>
     <color name="colorTitle">#212121</color>
-    <color name="colorMessageBackground">#ffaabbff</color>
-    <color name="colorMessageBorder">#ff8899dd</color>
+    <color name="colorMessageBackground">#f7f7f7</color>
+    <color name="colorMessageBorder">#f7f7f7</color>
     <!-- Deacon Blues -->
     <color name="indigo">#3F51B5</color>
     <color name="indigo_dark">#303F9F</color>
@@ -18,5 +18,7 @@
     <color name="almost_black">#212121</color>
     <color name="black">#000000</color>
     <color name="mellow_brown">#D7CCC8</color>
+    <!-- Others -->
+    <color name="gray">#666</color>
 </resources>
 

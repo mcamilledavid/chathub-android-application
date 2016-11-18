@@ -7,4 +7,10 @@
     <string name="preferences_menu_label">Preferences</string>
     <string name="auto_palette_preference">autoPalette</string>
     <string name="color_scheme_preference">colorScheme</string>
+    <string name="image">Image</string>
+    <string name="camera">Camera</string>
+    <string name="location">Location</string>
+    <string name="voice">Voice</string>
+    <string name="sticker">Sticker</string>
+    <string name="drawing">Draw</string>
 </resources>

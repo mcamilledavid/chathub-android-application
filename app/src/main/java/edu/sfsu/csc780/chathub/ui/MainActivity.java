@@ -16,10 +16,12 @@
 package edu.sfsu.csc780.chathub.ui;
 
 import android.app.Activity;
+import android.app.Dialog;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.media.Image;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -38,6 +40,7 @@ import android.text.Editable;
 import android.text.InputFilter;
 import android.text.TextWatcher;
 import android.util.Log;
+import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
@@ -45,6 +48,7 @@ import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ImageView;
+import android.widget.LinearLayout;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
@@ -88,7 +92,7 @@ public class MainActivity extends AppCompatActivity
     private SharedPreferences mSharedPreferences;
     private GoogleApiClient mGoogleApiClient;
 
-    private FloatingActionButton mSendButton;
+    private ImageButton mSendButton;
     private RecyclerView mMessageRecyclerView;
     private LinearLayoutManager mLinearLayoutManager;
     private ProgressBar mProgressBar;
@@ -102,6 +106,10 @@ public class MainActivity extends AppCompatActivity
             mFirebaseAdapter;
     private ImageButton mImageButton;
     private ImageButton mPhotoButton;
+    private ImageButton mVoiceButton;
+    private ImageButton mAddButton;
+    private ImageButton mDrawButton;
+    private ImageButton mStickerButton;
     private int mSavedTheme;
     private ImageButton mLocationButton;
     private View.OnClickListener mImageClickListener = new View.OnClickListener() {
@@ -180,7 +188,7 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
-        mSendButton = (FloatingActionButton) findViewById(R.id.sendButton);
+        mSendButton = (ImageButton) findViewById(R.id.sendButton);
         mSendButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -195,28 +203,64 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
+        mAddButton = (ImageButton)findViewById(R.id.addButton);
+        mAddButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                openBottomSheet();
+            }
+        });
 
-        mImageButton = (ImageButton) findViewById(R.id.shareImageButton);
+    }
+
+    public void openBottomSheet() {
+        View view = getLayoutInflater().inflate(R.layout.bottom_sheet_modal, null);
+        final Dialog mBottomSheetDialog = new Dialog(MainActivity.this, R.style.MaterialDialogSheet);
+        mBottomSheetDialog.setContentView(view);
+        mBottomSheetDialog.setCancelable(true);
+        mBottomSheetDialog.getWindow().setLayout(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        mBottomSheetDialog.getWindow().setGravity(Gravity.BOTTOM);
+        mBottomSheetDialog.show();
+        mImageButton = (ImageButton) mBottomSheetDialog.findViewById(R.id.shareImageButton);
         mImageButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 pickImage();
             }
         });
-
-        mPhotoButton = (ImageButton) findViewById(R.id.cameraButton);
+        mPhotoButton = (ImageButton) mBottomSheetDialog.findViewById(R.id.cameraButton);
         mPhotoButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 dispatchTakePhotoIntent();
             }
         });
-
-        mLocationButton = (ImageButton) findViewById(R.id.locationButton);
+        mLocationButton = (ImageButton) mBottomSheetDialog.findViewById(R.id.locationButton);
         mLocationButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 loadMap();
+            }
+        });
+        mVoiceButton = (ImageButton) mBottomSheetDialog.findViewById(R.id.voiceButton);
+        mVoiceButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // TODO: Add code when voice button is selected
+            }
+        });
+        mStickerButton = (ImageButton) mBottomSheetDialog.findViewById(R.id.stickerButton);
+        mStickerButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // TODO: Add code when sticker button is selected
+            }
+        });
+        mDrawButton = (ImageButton) mBottomSheetDialog.findViewById(R.id.drawButton);
+        mDrawButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                // TODO: Add code when draw button is selected
             }
         });
     }

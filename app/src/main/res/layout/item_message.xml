@@ -5,20 +5,19 @@
               xmlns:tools="http://schemas.android.com/tools"
               android:id="@+id/messageLayout"
               android:layout_margin="4dp"
-              android:background="@drawable/message_background"
               android:padding="4dp"
               android:gravity="center_vertical"
               android:orientation="horizontal">
 
-    <LinearLayout
+    <RelativeLayout
         android:layout_width="match_parent"
         android:layout_height="match_parent"
-        android:gravity="center_vertical"
+        android:gravity="center"
         android:orientation="horizontal">
 
         <de.hdodenhof.circleimageview.CircleImageView
             android:id="@+id/messengerImageView"
-            android:layout_width="36dp"
+            android:layout_width="wrap_content"
             android:layout_height="36dp"
             android:src="@drawable/ic_account_circle_black_36dp"/>
 
@@ -27,14 +26,46 @@
             android:layout_height="wrap_content"
             android:layout_marginLeft="10dp"
             android:gravity="center_vertical"
-            android:orientation="vertical">
+            android:orientation="vertical"
+            android:layout_toEndOf="@+id/messengerImageView">
+
+            <LinearLayout
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:orientation="horizontal">
+
+                <TextView
+                    android:id="@+id/messengerTextView"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance=
+                        "?android:attr/textAppearanceMedium"
+                    android:textColor="@android:color/black"
+                    android:textSize="14sp"
+                    android:textStyle="bold"
+                    tools:text="John Doe"
+                    android:gravity="start"
+                    android:layout_marginRight="10dp"
+                    android:layout_marginBottom="5dp"/>
+                <TextView
+                    android:id="@+id/timestampTextView"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:textAppearance="?android:textAppearanceSmall"
+                    android:textColor="@android:color/darker_gray"
+                    android:textSize="12sp"
+                    tools:text="Sat 10:52AM"
+                    android:gravity="start"
+                    android:layout_marginRight="10dp"
+                    android:layout_marginBottom="5dp"/>
+            </LinearLayout>
 
             <TextView
                 android:id="@+id/messageTextView"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:textStyle="bold"
-                android:textColor="@android:color/black"
+                android:textColor="@color/gray"
+                android:textSize="14sp"
                 tools:text="This is a test"
                 android:layout_marginTop="5dp"
                 android:layout_marginRight="10dp"
@@ -49,34 +80,6 @@
                 android:visibility="gone"
                 tools:src="@drawable/ic_image_black_24px"
                 tools:visibility="visible"/>
-
-            <LinearLayout
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content">
-                <TextView
-                    android:id="@+id/messengerTextView"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:textAppearance=
-                        "?android:attr/textAppearanceSmall"
-                    tools:text="John Doe"
-                    android:gravity="start"
-                    android:layout_marginBottom="5dp"/>
-                <TextView
-                    android:id="@+id/timestampTextView"
-                    android:layout_width="wrap_content"
-                    android:layout_height="wrap_content"
-                    android:layout_weight="1"
-                    android:textAppearance="?android:textAppearanceSmall"
-                    tools:text="Sat 10:52AM"
-                    android:gravity="end"
-                    android:layout_marginRight="10dp"
-                    android:layout_marginBottom="5dp"/>
-            </LinearLayout>
         </LinearLayout>
-
-    </LinearLayout>
-
-
+    </RelativeLayout>
 </LinearLayout>
