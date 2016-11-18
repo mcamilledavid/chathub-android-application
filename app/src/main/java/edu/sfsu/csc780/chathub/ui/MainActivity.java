@@ -27,6 +27,8 @@ import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.design.widget.FloatingActionButton;
+import android.support.v4.app.DialogFragment;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.Loader;
 import android.support.v7.app.AppCompatActivity;
@@ -42,9 +44,11 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageButton;
+import android.widget.ImageView;
 import android.widget.ProgressBar;
 import android.widget.Toast;
 
+import com.bumptech.glide.load.resource.bitmap.GlideBitmapDrawable;
 import com.firebase.ui.database.FirebaseRecyclerAdapter;
 import com.google.android.gms.auth.api.Auth;
 import com.google.android.gms.common.ConnectionResult;
@@ -73,6 +77,7 @@ public class MainActivity extends AppCompatActivity
     private static final String TAG = "MainActivity";
     public static final String MESSAGES_CHILD = "messages";
     private static final int REQUEST_INVITE = 1;
+    private static final int REQUEST_TAKE_PHOTO = 3;
     public static final int REQUEST_PREFERENCES = 2;
     public static final int MSG_LENGTH_LIMIT = 64;
     private static final double MAX_LINEAR_DIMENSION = 500.0;
@@ -96,8 +101,20 @@ public class MainActivity extends AppCompatActivity
     private FirebaseRecyclerAdapter<ChatMessage, MessageUtil.MessageViewHolder>
             mFirebaseAdapter;
     private ImageButton mImageButton;
+    private ImageButton mPhotoButton;
     private int mSavedTheme;
     private ImageButton mLocationButton;
+    private View.OnClickListener mImageClickListener = new View.OnClickListener() {
+        @Override
+        public void onClick(View v) {
+            ImageView photoView =  (ImageView) v.findViewById(R.id.messageImageView);
+            // Only show the larger view in dialog if there's a image for the message
+            if (photoView.getVisibility() == View.VISIBLE) {
+                Bitmap bitmap = ((GlideBitmapDrawable) photoView.getDrawable()).getBitmap();
+                showPhotoDialog( ImageDialogFragment.newInstance(bitmap));
+            }
+        }
+    };
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -136,7 +153,8 @@ public class MainActivity extends AppCompatActivity
         mFirebaseAdapter = MessageUtil.getFirebaseAdapter(this,
                 this,  /* MessageLoadListener */
                 mLinearLayoutManager,
-                mMessageRecyclerView);
+                mMessageRecyclerView,
+                mImageClickListener);
         mMessageRecyclerView.setAdapter(mFirebaseAdapter);
 
         mProgressBar.setVisibility(ProgressBar.INVISIBLE);
@@ -186,6 +204,14 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
+        mPhotoButton = (ImageButton) findViewById(R.id.cameraButton);
+        mPhotoButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                dispatchTakePhotoIntent();
+            }
+        });
+
         mLocationButton = (ImageButton) findViewById(R.id.locationButton);
         mLocationButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -193,6 +219,15 @@ public class MainActivity extends AppCompatActivity
                 loadMap();
             }
         });
+    }
+
+    private void dispatchTakePhotoIntent() {
+        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
+
+        // Ensure the implicit intent can be handled
+        if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
+            startActivityForResult(takePictureIntent, REQUEST_TAKE_PHOTO);
+        }
     }
 
     @Override
@@ -304,6 +339,16 @@ public class MainActivity extends AppCompatActivity
                 createImageMessage(uri);
             } else {
                 Log.e(TAG, "Cannot get image for uploading");
+            }
+        } else if (requestCode == REQUEST_TAKE_PHOTO && resultCode == RESULT_OK) {
+
+            if (data != null && data.getExtras() != null) {
+                Bundle extras = data.getExtras();
+                Bitmap imageBitmap = (Bitmap) extras.get("data");
+                Log.d(TAG, "imageBitmap size:" + imageBitmap.getByteCount());
+                createImageMessage(savePhotoImage(imageBitmap));
+            } else {
+                Log.e(TAG, "Cannot get photo URI after taking photo");
             }
         } else if (requestCode == REQUEST_PREFERENCES) {
             if (DesignUtils.getPreferredTheme(this) != mSavedTheme) {
@@ -440,5 +485,17 @@ public class MainActivity extends AppCompatActivity
         mProgressBar.setVisibility(ProgressBar.VISIBLE);
         mLocationButton.setEnabled(false);
         loader.forceLoad();
+    }
+
+    void showPhotoDialog(DialogFragment dialogFragment) {
+        // DialogFragment.show() will take care of adding the fragment
+        // in a transaction.  We also want to remove any currently showing
+        // dialog, so make our own transaction and take care of that here.
+        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
+        android.support.v4.app.Fragment prev = getSupportFragmentManager().findFragmentByTag("dialog");
+        if (prev != null) { ft.remove(prev); }
+        ft.addToBackStack(null);
+
+        dialogFragment.show(ft, "dialog");
     }
 }

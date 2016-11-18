@@ -6,6 +6,8 @@ import android.graphics.Bitmap;
 import android.net.Uri;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
+import android.support.v4.app.DialogFragment;
+import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -15,6 +17,7 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
+import com.bumptech.glide.load.resource.bitmap.GlideBitmapDrawable;
 import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.SimpleTarget;
 import com.firebase.ui.database.FirebaseRecyclerAdapter;
@@ -48,6 +51,7 @@ public class MessageUtil {
     }
 
     public static class MessageViewHolder extends RecyclerView.ViewHolder {
+        public static View.OnClickListener sMessageViewListener;
         public TextView messageTextView;
         public ImageView messageImageView;
         public TextView messengerTextView;
@@ -62,16 +66,19 @@ public class MessageUtil {
             messageImageView = (ImageView) itemView.findViewById(R.id.messageImageView);
             timestampTextView = (TextView) itemView.findViewById(R.id.timestampTextView);
             messageLayout = (View) itemView.findViewById(R.id.messageLayout);
+            v.setOnClickListener(sMessageViewListener);
         }
     }
 
     public static FirebaseRecyclerAdapter getFirebaseAdapter(final Activity activity,
                                                              MessageLoadListener listener,
                                                              final LinearLayoutManager linearManager,
-                                                             final RecyclerView recyclerView) {
+                                                             final RecyclerView recyclerView,
+                                                             final View.OnClickListener clickListener) {
         final SharedPreferences preferences =
                 PreferenceManager.getDefaultSharedPreferences(activity);
         sAdapterListener = listener;
+        MessageViewHolder.sMessageViewListener = clickListener;
         final FirebaseRecyclerAdapter adapter = new FirebaseRecyclerAdapter<ChatMessage,
                 MessageViewHolder>(
                 ChatMessage.class,
