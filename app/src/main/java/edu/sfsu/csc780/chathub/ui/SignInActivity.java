@@ -129,7 +129,7 @@ public class SignInActivity extends AppCompatActivity implements
                         // Process the auth task result
                         Log.d(TAG, "signInWithCredential:onComplete:" + task.isSuccessful());
                         // If sign in fails, display a message to the user.
-                        // If sign in succeeds, start MainActivity and finish this activity
+                        // If sign in succeeds, start ChannelActivity and finish this activity
                         if (!task.isSuccessful()) {
                             Log.w(TAG, "signInWithCredential", task.getException());
                             Toast.makeText(SignInActivity.this, "Authentication failed.", Toast

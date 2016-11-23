@@ -23,15 +23,15 @@ import android.test.suitebuilder.annotation.LargeTest;
 import org.junit.Rule;
 import org.junit.runner.RunWith;
 
-import edu.sfsu.csc780.chathub.ui.MainActivity;
+import edu.sfsu.csc780.chathub.ui.ChannelActivity;
 
 @RunWith(AndroidJUnit4.class)
 @LargeTest
-public class MainActivityEspressoTest {
+public class ChannelActivityEspressoTest {
 
     @Rule
-    public ActivityTestRule<MainActivity> mActivityRule =
-            new ActivityTestRule<>(MainActivity.class);
+    public ActivityTestRule<ChannelActivity> mActivityRule =
+            new ActivityTestRule<>(ChannelActivity.class);
 
     // Add instrumentation test here
 }

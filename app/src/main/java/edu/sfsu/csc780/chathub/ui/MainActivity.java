@@ -1,128 +1,76 @@
-/**
- * Copyright Google Inc. All Rights Reserved.
- * <p/>
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- * <p/>
- * http://www.apache.org/licenses/LICENSE-2.0
- * <p/>
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
 package edu.sfsu.csc780.chathub.ui;
 
 import android.app.Activity;
-import android.app.Dialog;
+import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
-import android.media.Image;
 import android.net.Uri;
 import android.os.Bundle;
-import android.os.Environment;
 import android.preference.PreferenceManager;
-import android.provider.MediaStore;
 import android.support.annotation.NonNull;
-import android.support.design.widget.FloatingActionButton;
-import android.support.v4.app.DialogFragment;
-import android.support.v4.app.FragmentTransaction;
-import android.support.v4.app.LoaderManager;
-import android.support.v4.content.Loader;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
-import android.support.v7.widget.LinearLayoutManager;
-import android.support.v7.widget.RecyclerView;
-import android.text.Editable;
-import android.text.InputFilter;
-import android.text.TextWatcher;
 import android.util.Log;
-import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
 import android.view.View;
+import android.widget.AdapterView;
+import android.widget.ArrayAdapter;
+import android.widget.Button;
 import android.widget.EditText;
-import android.widget.ImageButton;
-import android.widget.ImageView;
-import android.widget.LinearLayout;
+import android.widget.ListView;
 import android.widget.ProgressBar;
+import android.widget.TextView;
 import android.widget.Toast;
 
-import com.bumptech.glide.load.resource.bitmap.GlideBitmapDrawable;
-import com.firebase.ui.database.FirebaseRecyclerAdapter;
 import com.google.android.gms.auth.api.Auth;
 import com.google.android.gms.common.ConnectionResult;
 import com.google.android.gms.common.api.GoogleApiClient;
-import com.google.android.gms.tasks.OnFailureListener;
-import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
-import com.google.firebase.storage.StorageReference;
-import com.google.firebase.storage.UploadTask;
+import com.google.firebase.database.DataSnapshot;
+import com.google.firebase.database.DatabaseError;
+import com.google.firebase.database.DatabaseReference;
+import com.google.firebase.database.FirebaseDatabase;
+import com.google.firebase.database.ValueEventListener;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.text.SimpleDateFormat;
-import java.util.Date;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.Set;
 
 import edu.sfsu.csc780.chathub.R;
-import edu.sfsu.csc780.chathub.model.ChatMessage;
 
 public class MainActivity extends AppCompatActivity
-        implements GoogleApiClient.OnConnectionFailedListener,
-        MessageUtil.MessageLoadListener {
+        implements GoogleApiClient.OnConnectionFailedListener {
 
-    private static final String TAG = "MainActivity";
-    public static final String MESSAGES_CHILD = "messages";
-    private static final int REQUEST_INVITE = 1;
-    private static final int REQUEST_TAKE_PHOTO = 3;
-    public static final int REQUEST_PREFERENCES = 2;
-    public static final int MSG_LENGTH_LIMIT = 64;
-    private static final double MAX_LINEAR_DIMENSION = 500.0;
-    public static final String ANONYMOUS = "anonymous";
-    private static final int REQUEST_PICK_IMAGE = 1;
     private String mUsername;
     private String mPhotoUrl;
     private SharedPreferences mSharedPreferences;
     private GoogleApiClient mGoogleApiClient;
-
-    private ImageButton mSendButton;
-    private RecyclerView mMessageRecyclerView;
-    private LinearLayoutManager mLinearLayoutManager;
-    private ProgressBar mProgressBar;
-    private EditText mMessageEditText;
+    public static final String ANONYMOUS = "anonymous";
+    public static final int REQUEST_PREFERENCES = 2;
+    private static final String TAG = "MainActivity";
 
     // Firebase instance variables
     private FirebaseAuth mAuth;
     private FirebaseUser mUser;
 
-    private FirebaseRecyclerAdapter<ChatMessage, MessageUtil.MessageViewHolder>
-            mFirebaseAdapter;
-    private ImageButton mImageButton;
-    private ImageButton mPhotoButton;
-    private ImageButton mVoiceButton;
-    private ImageButton mAddButton;
-    private ImageButton mDrawButton;
-    private ImageButton mStickerButton;
     private int mSavedTheme;
-    private ImageButton mLocationButton;
-    private View.OnClickListener mImageClickListener = new View.OnClickListener() {
-        @Override
-        public void onClick(View v) {
-            ImageView photoView =  (ImageView) v.findViewById(R.id.messageImageView);
-            // Only show the larger view in dialog if there's a image for the message
-            if (photoView.getVisibility() == View.VISIBLE) {
-                Bitmap bitmap = ((GlideBitmapDrawable) photoView.getDrawable()).getBitmap();
-                showPhotoDialog( ImageDialogFragment.newInstance(bitmap));
-            }
-        }
-    };
+
+    private Button  add_room;
+    private EditText room_name;
+
+    private ListView listView;
+    private ArrayAdapter<String> arrayAdapter;
+    private ArrayList<String> list_of_rooms = new ArrayList<>();
+    private String name;
+    private DatabaseReference root = FirebaseDatabase.getInstance().getReference().getRoot();
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -130,6 +78,7 @@ public class MainActivity extends AppCompatActivity
         DesignUtils.applyColorfulTheme(this);
         setContentView(R.layout.activity_main);
         mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
+
         // Set default username is anonymous.
         mUsername = ANONYMOUS;
         //Initialize Auth
@@ -151,127 +100,59 @@ public class MainActivity extends AppCompatActivity
                 .addApi(Auth.GOOGLE_SIGN_IN_API)
                 .build();
 
-        // Initialize ProgressBar and RecyclerView.
-        mProgressBar = (ProgressBar) findViewById(R.id.progressBar);
-        mMessageRecyclerView = (RecyclerView) findViewById(R.id.messageRecyclerView);
-        mLinearLayoutManager = new LinearLayoutManager(this);
-        mLinearLayoutManager.setStackFromEnd(true);
-        mMessageRecyclerView.setLayoutManager(mLinearLayoutManager);
 
-        mFirebaseAdapter = MessageUtil.getFirebaseAdapter(this,
-                this,  /* MessageLoadListener */
-                mLinearLayoutManager,
-                mMessageRecyclerView,
-                mImageClickListener);
-        mMessageRecyclerView.setAdapter(mFirebaseAdapter);
+        add_room = (Button) findViewById(R.id.btn_add_room);
+        room_name = (EditText) findViewById(R.id.room_name_edittext);
+        listView = (ListView) findViewById(R.id.listView);
 
-        mProgressBar.setVisibility(ProgressBar.INVISIBLE);
+        arrayAdapter = new ArrayAdapter<String>(this,android.R.layout.simple_list_item_1,list_of_rooms);
 
-        mMessageEditText = (EditText) findViewById(R.id.messageEditText);
-        mMessageEditText.setFilters(new InputFilter[]{new InputFilter.LengthFilter(MSG_LENGTH_LIMIT)});
-        mMessageEditText.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-            }
+        listView.setAdapter(arrayAdapter);
 
-            @Override
-            public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-                if (charSequence.toString().trim().length() > 0) {
-                    mSendButton.setEnabled(true);
-                } else {
-                    mSendButton.setEnabled(false);
-                }
-            }
-
-            @Override
-            public void afterTextChanged(Editable editable) {
-            }
-        });
-
-        mSendButton = (ImageButton) findViewById(R.id.sendButton);
-        mSendButton.setOnClickListener(new View.OnClickListener() {
+        add_room.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                // Send messages on click.
-                mMessageRecyclerView.scrollToPosition(0);
-                ChatMessage chatMessage = new
-                        ChatMessage(mMessageEditText.getText().toString(),
-                        mUsername,
-                        mPhotoUrl);
-                MessageUtil.send(chatMessage);
-                mMessageEditText.setText("");
+
+                Map<String,Object> map = new HashMap<String, Object>();
+                map.put(room_name.getText().toString(),"");
+                root.updateChildren(map);
+                room_name.setText("");
             }
         });
 
-        mAddButton = (ImageButton)findViewById(R.id.addButton);
-        mAddButton.setOnClickListener(new View.OnClickListener() {
+        root.addValueEventListener(new ValueEventListener() {
             @Override
-            public void onClick(View v) {
-                openBottomSheet();
+            public void onDataChange(DataSnapshot dataSnapshot) {
+
+                Set<String> set = new HashSet<String>();
+                Iterator i = dataSnapshot.getChildren().iterator();
+
+                while (i.hasNext()){
+                    set.add(((DataSnapshot)i.next()).getKey());
+                }
+
+                list_of_rooms.clear();
+                list_of_rooms.addAll(set);
+
+                arrayAdapter.notifyDataSetChanged();
+            }
+
+            @Override
+            public void onCancelled(DatabaseError databaseError) {
+
             }
         });
 
-    }
+        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
 
-    public void openBottomSheet() {
-        View view = getLayoutInflater().inflate(R.layout.bottom_sheet_modal, null);
-        final Dialog mBottomSheetDialog = new Dialog(MainActivity.this, R.style.MaterialDialogSheet);
-        mBottomSheetDialog.setContentView(view);
-        mBottomSheetDialog.setCancelable(true);
-        mBottomSheetDialog.getWindow().setLayout(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        mBottomSheetDialog.getWindow().setGravity(Gravity.BOTTOM);
-        mBottomSheetDialog.show();
-        mImageButton = (ImageButton) mBottomSheetDialog.findViewById(R.id.shareImageButton);
-        mImageButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                pickImage();
+                Intent intent = new Intent(getApplicationContext(), ChannelActivity.class);
+                intent.putExtra("room_name",((TextView)view).getText().toString());
+                startActivity(intent);
             }
         });
-        mPhotoButton = (ImageButton) mBottomSheetDialog.findViewById(R.id.cameraButton);
-        mPhotoButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                dispatchTakePhotoIntent();
-            }
-        });
-        mLocationButton = (ImageButton) mBottomSheetDialog.findViewById(R.id.locationButton);
-        mLocationButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                loadMap();
-            }
-        });
-        mVoiceButton = (ImageButton) mBottomSheetDialog.findViewById(R.id.voiceButton);
-        mVoiceButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // TODO: Add code when voice button is selected
-            }
-        });
-        mStickerButton = (ImageButton) mBottomSheetDialog.findViewById(R.id.stickerButton);
-        mStickerButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // TODO: Add code when sticker button is selected
-            }
-        });
-        mDrawButton = (ImageButton) mBottomSheetDialog.findViewById(R.id.drawButton);
-        mDrawButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // TODO: Add code when draw button is selected
-            }
-        });
-    }
 
-    private void dispatchTakePhotoIntent() {
-        Intent takePictureIntent = new Intent(MediaStore.ACTION_IMAGE_CAPTURE);
-
-        // Ensure the implicit intent can be handled
-        if (takePictureIntent.resolveActivity(getPackageManager()) != null) {
-            startActivityForResult(takePictureIntent, REQUEST_TAKE_PHOTO);
-        }
     }
 
     @Override
@@ -289,17 +170,6 @@ public class MainActivity extends AppCompatActivity
     @Override
     public void onResume() {
         super.onResume();
-        LocationUtils.startLocationUpdates(this);
-    }
-
-    @Override
-    public void onRequestPermissionsResult(int requestCode,
-                                           String permissions[], int[] grantResults) {
-        boolean isGranted = (grantResults.length > 0
-                && grantResults[0] == PackageManager.PERMISSION_GRANTED);
-        if (isGranted && requestCode == LocationUtils.REQUEST_CODE) {
-            LocationUtils.startLocationUpdates(this);
-        }
     }
 
     @Override
@@ -341,60 +211,10 @@ public class MainActivity extends AppCompatActivity
     }
 
     @Override
-    public void onLoadComplete() {
-        mProgressBar.setVisibility(ProgressBar.INVISIBLE);
-    }
-
-    private void pickImage() {
-        // ACTION_OPEN_DOCUMENT is the intent to choose a file via the system's file browser
-        Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
-
-        // Filter to only show results that can be "opened"
-        intent.addCategory(Intent.CATEGORY_OPENABLE);
-
-        // Filter to show only images, using the image MIME data type.
-        intent.setType("image/*");
-
-        startActivityForResult(intent, REQUEST_PICK_IMAGE);
-    }
-
-    @Override
     protected void onActivityResult(int requestCode, int resultCode, Intent data) {
         super.onActivityResult(requestCode, resultCode, data);
         Log.d(TAG, "onActivityResult: request=" + requestCode + ", result=" + resultCode);
-
-        if (requestCode == REQUEST_PICK_IMAGE && resultCode == Activity.RESULT_OK) {
-            // Process selected image here
-            // The document selected by the user won't be returned in the intent.
-            // Instead, a URI to that document will be contained in the return intent
-            // provided to this method as a parameter.
-            // Pull that URI using resultData.getData().
-            if (data != null) {
-                Uri uri = data.getData();
-                Log.i(TAG, "Uri: " + uri.toString());
-
-                // Resize if too big for messaging
-                Bitmap bitmap = getBitmapForUri(uri);
-                Bitmap resizedBitmap = scaleImage(bitmap);
-                if (bitmap != resizedBitmap) {
-                    uri = savePhotoImage(resizedBitmap);
-                }
-
-                createImageMessage(uri);
-            } else {
-                Log.e(TAG, "Cannot get image for uploading");
-            }
-        } else if (requestCode == REQUEST_TAKE_PHOTO && resultCode == RESULT_OK) {
-
-            if (data != null && data.getExtras() != null) {
-                Bundle extras = data.getExtras();
-                Bitmap imageBitmap = (Bitmap) extras.get("data");
-                Log.d(TAG, "imageBitmap size:" + imageBitmap.getByteCount());
-                createImageMessage(savePhotoImage(imageBitmap));
-            } else {
-                Log.e(TAG, "Cannot get photo URI after taking photo");
-            }
-        } else if (requestCode == REQUEST_PREFERENCES) {
+    if (requestCode == REQUEST_PREFERENCES) {
             if (DesignUtils.getPreferredTheme(this) != mSavedTheme) {
                 DesignUtils.applyColorfulTheme(this);
                 this.recreate();
@@ -402,144 +222,4 @@ public class MainActivity extends AppCompatActivity
         }
     }
 
-    private void createImageMessage(Uri uri) {
-        if (uri == null) {
-            Log.e(TAG, "Could not create image message with null uri");
-            return;
-        }
-
-        final StorageReference imageReference = MessageUtil.getImageStorageReference(mUser, uri);
-        UploadTask uploadTask = imageReference.putFile(uri);
-
-        // Register observers to listen for when task is done or if it fails
-        uploadTask.addOnFailureListener(new OnFailureListener() {
-            @Override
-            public void onFailure(@NonNull Exception exception) {
-                Log.e(TAG, "Failed to upload image message");
-            }
-        }).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
-            @Override
-            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                ChatMessage chatMessage = new
-                        ChatMessage(mMessageEditText.getText().toString(),
-                        mUsername,
-                        mPhotoUrl, imageReference.toString());
-                MessageUtil.send(chatMessage);
-                mMessageEditText.setText("");
-            }
-        });
-    }
-
-    private Bitmap getBitmapForUri(Uri imageUri) {
-        Bitmap bitmap = null;
-        try {
-            bitmap = MediaStore.Images.Media.getBitmap(this.getContentResolver(), imageUri);
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        return bitmap;
-    }
-
-    private Bitmap scaleImage(Bitmap bitmap) {
-        int originalHeight = bitmap.getHeight();
-        int originalWidth = bitmap.getWidth();
-        double scaleFactor =  MAX_LINEAR_DIMENSION / (double)(originalHeight + originalWidth);
-
-        // We only want to scale down images, not scale upwards
-        if (scaleFactor < 1.0) {
-            int targetWidth = (int) Math.round(originalWidth * scaleFactor);
-            int targetHeight = (int) Math.round(originalHeight * scaleFactor);
-            return Bitmap.createScaledBitmap(bitmap, targetWidth, targetHeight, true);
-        } else {
-            return bitmap;
-        }
-    }
-
-    private Uri savePhotoImage(Bitmap imageBitmap) {
-        File photoFile = null;
-        try {
-            photoFile = createImageFile();
-        } catch (IOException e) {
-            e.printStackTrace();
-        }
-        if (photoFile == null) {
-            Log.d(TAG, "Error creating media file");
-            return null;
-        }
-
-        try {
-            FileOutputStream fos = new FileOutputStream(photoFile);
-            imageBitmap.compress(Bitmap.CompressFormat.PNG, 90, fos);
-            fos.close();
-        } catch (FileNotFoundException e) {
-            Log.d(TAG, "File not found: " + e.getMessage());
-        } catch (IOException e) {
-            Log.d(TAG, "Error accessing file: " + e.getMessage());
-        }
-        return Uri.fromFile(photoFile);
-    }
-
-    private File createImageFile() throws IOException {
-        // Create an image file name
-        String timeStamp = new SimpleDateFormat("yyyyMMdd-HHmmss").format(new Date());
-        String imageFileNamePrefix = "chathub-" + timeStamp;
-        File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
-
-        File imageFile = File.createTempFile(
-                imageFileNamePrefix,    /* prefix */
-                ".jpg",                 /* suffix */
-                storageDir              /* directory */
-        );
-        return imageFile;
-    }
-
-
-    private void loadMap() {
-        Loader<Bitmap> loader = getSupportLoaderManager().initLoader(0, null, new LoaderManager
-                .LoaderCallbacks<Bitmap>() {
-            @Override
-            public Loader<Bitmap> onCreateLoader(final int id, final Bundle args) {
-                return new MapLoader(MainActivity.this);
-            }
-
-            @Override
-            public void onLoadFinished(final Loader<Bitmap> loader, final Bitmap result) {
-                mProgressBar.setVisibility(ProgressBar.INVISIBLE);
-                mLocationButton.setEnabled(true);
-
-                if (result == null) return;
-                // Resize if too big for messaging
-                Bitmap resizedBitmap = scaleImage(result);
-                Uri uri = null;
-                if (result != resizedBitmap) {
-                    uri = savePhotoImage(resizedBitmap);
-                } else {
-                    uri = savePhotoImage(result);
-                }
-                createImageMessage(uri);
-
-            }
-
-            @Override
-            public void onLoaderReset(final Loader<Bitmap> loader) {
-            }
-
-        });
-
-        mProgressBar.setVisibility(ProgressBar.VISIBLE);
-        mLocationButton.setEnabled(false);
-        loader.forceLoad();
-    }
-
-    void showPhotoDialog(DialogFragment dialogFragment) {
-        // DialogFragment.show() will take care of adding the fragment
-        // in a transaction.  We also want to remove any currently showing
-        // dialog, so make our own transaction and take care of that here.
-        FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
-        android.support.v4.app.Fragment prev = getSupportFragmentManager().findFragmentByTag("dialog");
-        if (prev != null) { ft.remove(prev); }
-        ft.addToBackStack(null);
-
-        dialogFragment.show(ft, "dialog");
-    }
 }

@@ -19,6 +19,8 @@
             </intent-filter>
         </activity>
 
+        <activity android:name=".ui.ChannelActivity" />
+
         <activity android:name=".ui.SignInActivity" />
 
         <activity android:name=".ui.PreferencesActivity" />

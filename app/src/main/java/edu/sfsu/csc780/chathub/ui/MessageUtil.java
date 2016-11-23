@@ -31,6 +31,8 @@ import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 
 import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Map;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 import edu.sfsu.csc780.chathub.model.ChatMessage;
@@ -38,7 +40,6 @@ import edu.sfsu.csc780.chathub.R;
 
 public class MessageUtil {
     private static final String LOG_TAG = MessageUtil.class.getSimpleName();
-    public static final String MESSAGES_CHILD = "messages";
     private static DatabaseReference sFirebaseDatabaseReference =
             FirebaseDatabase.getInstance().getReference();
     private static FirebaseStorage sStorage = FirebaseStorage.getInstance();
@@ -46,8 +47,8 @@ public class MessageUtil {
     private static FirebaseAuth sFirebaseAuth;
     public interface MessageLoadListener { public void onLoadComplete(); }
 
-    public static void send(ChatMessage chatMessage) {
-        sFirebaseDatabaseReference.child(MESSAGES_CHILD).push().setValue(chatMessage);
+    public static void send(ChatMessage chatMessage, String room_name) {
+        sFirebaseDatabaseReference.child(room_name).push().setValue(chatMessage);
     }
 
     public static class MessageViewHolder extends RecyclerView.ViewHolder {
@@ -84,7 +85,7 @@ public class MessageUtil {
                 ChatMessage.class,
                 R.layout.item_message,
                 MessageViewHolder.class,
-                sFirebaseDatabaseReference.child(MESSAGES_CHILD)) {
+                sFirebaseDatabaseReference.child(ChannelActivity.room_name)) {
             @Override
             protected void populateViewHolder(final MessageViewHolder viewHolder,
                                               ChatMessage chatMessage, int position) {
