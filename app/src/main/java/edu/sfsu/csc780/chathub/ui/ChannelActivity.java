@@ -17,10 +17,14 @@ package edu.sfsu.csc780.chathub.ui;
 
 import android.app.Activity;
 import android.app.Dialog;
+import android.app.ProgressDialog;
+import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
 import android.graphics.Bitmap;
+import android.media.MediaPlayer;
+import android.media.MediaRecorder;
 import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
@@ -42,6 +46,7 @@ import android.view.Gravity;
 import android.view.Menu;
 import android.view.MenuInflater;
 import android.view.MenuItem;
+import android.view.MotionEvent;
 import android.view.View;
 import android.widget.EditText;
 import android.widget.ImageButton;
@@ -59,6 +64,7 @@ import com.google.android.gms.tasks.OnFailureListener;
 import com.google.android.gms.tasks.OnSuccessListener;
 import com.google.firebase.auth.FirebaseAuth;
 import com.google.firebase.auth.FirebaseUser;
+import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 import com.google.firebase.storage.UploadTask;
 
@@ -66,6 +72,7 @@ import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
+import java.io.RandomAccessFile;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -77,8 +84,6 @@ public class ChannelActivity extends AppCompatActivity
         MessageUtil.MessageLoadListener {
 
     private static final String TAG = "ChannelActivity";
-    public static final String MESSAGES_CHILD = "messages";
-    private static final int REQUEST_INVITE = 1;
     private static final int REQUEST_TAKE_PHOTO = 3;
     public static final int REQUEST_PREFERENCES = 2;
     public static final int MSG_LENGTH_LIMIT = 64;
@@ -104,12 +109,13 @@ public class ChannelActivity extends AppCompatActivity
             mFirebaseAdapter;
     private ImageButton mImageButton;
     private ImageButton mPhotoButton;
-    private ImageButton mVoiceButton;
+    private ImageButton mAudioButton;
     private ImageButton mAddButton;
     private ImageButton mDrawButton;
     private ImageButton mStickerButton;
     private int mSavedTheme;
     private ImageButton mLocationButton;
+
     private View.OnClickListener mImageClickListener = new View.OnClickListener() {
         @Override
         public void onClick(View v) {
@@ -122,6 +128,12 @@ public class ChannelActivity extends AppCompatActivity
         }
     };
 
+    private MediaRecorder mRecorder;
+    private String mFileName = null;
+    private StorageReference mStorage;
+    private ProgressDialog mProgress;
+    private MediaPlayer mSound;
+    private static final String LOG_TAG = "Record_Log";
     public static String mChannelName;
 
     @Override
@@ -225,6 +237,7 @@ public class ChannelActivity extends AppCompatActivity
         mBottomSheetDialog.getWindow().setLayout(LinearLayout.LayoutParams.MATCH_PARENT, LinearLayout.LayoutParams.WRAP_CONTENT);
         mBottomSheetDialog.getWindow().setGravity(Gravity.BOTTOM);
         mBottomSheetDialog.show();
+
         mImageButton = (ImageButton) mBottomSheetDialog.findViewById(R.id.shareImageButton);
         mImageButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -232,6 +245,7 @@ public class ChannelActivity extends AppCompatActivity
                 pickImage();
             }
         });
+
         mPhotoButton = (ImageButton) mBottomSheetDialog.findViewById(R.id.cameraButton);
         mPhotoButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -239,6 +253,7 @@ public class ChannelActivity extends AppCompatActivity
                 dispatchTakePhotoIntent();
             }
         });
+
         mLocationButton = (ImageButton) mBottomSheetDialog.findViewById(R.id.locationButton);
         mLocationButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -246,13 +261,44 @@ public class ChannelActivity extends AppCompatActivity
                 loadMap();
             }
         });
-        mVoiceButton = (ImageButton) mBottomSheetDialog.findViewById(R.id.voiceButton);
-        mVoiceButton.setOnClickListener(new View.OnClickListener() {
+
+        mProgress = new ProgressDialog(this);
+        mStorage = FirebaseStorage.getInstance().getReference();
+        mAudioButton = (ImageButton) mBottomSheetDialog.findViewById(R.id.voiceButton);
+        mAudioButton.setOnTouchListener(new View.OnTouchListener() {
             @Override
-            public void onClick(View v) {
-                // TODO: Add code when voice button is selected
+            public boolean onTouch(View v, MotionEvent motionEvent) {
+
+                if(motionEvent.getAction() == MotionEvent.ACTION_DOWN){
+
+                    startRecording();
+
+                    Context context = getApplicationContext();
+                    CharSequence text = "Recording Started!";
+                    int duration = Toast.LENGTH_SHORT;
+
+                    Toast toast = Toast.makeText(context, text, duration);
+                    toast.show();
+
+                }else if(motionEvent.getAction() == MotionEvent.ACTION_UP){
+
+                    stopRecording();
+
+                    Context context = getApplicationContext();
+                    CharSequence text = "Recording Stopped!";
+                    int duration = Toast.LENGTH_SHORT;
+
+                    Toast toast = Toast.makeText(context, text, duration);
+                    toast.show();
+
+                }
+
+                return false;
             }
         });
+        mFileName = Environment.getExternalStorageDirectory().getAbsolutePath();
+        mFileName += "/recorded_audio.3gp";
+
         mStickerButton = (ImageButton) mBottomSheetDialog.findViewById(R.id.stickerButton);
         mStickerButton.setOnClickListener(new View.OnClickListener() {
             @Override
@@ -260,11 +306,109 @@ public class ChannelActivity extends AppCompatActivity
                 // TODO: Add code when sticker button is selected
             }
         });
+
         mDrawButton = (ImageButton) mBottomSheetDialog.findViewById(R.id.drawButton);
         mDrawButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
                 // TODO: Add code when draw button is selected
+            }
+        });
+    }
+
+    private void startRecording() {
+        mRecorder = new MediaRecorder();
+        mRecorder.setAudioSource(MediaRecorder.AudioSource.MIC);
+        mRecorder.setOutputFormat(MediaRecorder.OutputFormat.THREE_GPP);
+        mRecorder.setOutputFile(mFileName);
+        mRecorder.setAudioEncoder(MediaRecorder.AudioEncoder.AMR_NB);
+
+        try {
+            mRecorder.prepare();
+        } catch (IOException e) {
+            Log.e(LOG_TAG, "prepare() failed");
+        }
+
+        mRecorder.start();
+    }
+
+    private void stopRecording() {
+        mRecorder.stop();
+        mRecorder.release();
+        mRecorder = null;
+
+        Uri uri = saveAudio(mFileName);
+        createAudioMessage(uri);
+    }
+
+    private Uri saveAudio(String mFileName) {
+        File returnAudioFile = null;
+
+        try {
+            returnAudioFile = createAudioFile();
+        } catch (IOException e) {
+            e.printStackTrace();
+        }
+        if (returnAudioFile == null) {
+            Log.d(TAG, "Error creating media file");
+            return null;
+        }
+
+        try {
+            RandomAccessFile f = new RandomAccessFile(mFileName, "r");
+            byte[] b = new byte[(int)f.length()];
+            f.readFully(b);
+            FileOutputStream fos = new FileOutputStream(returnAudioFile);
+            fos.write(b);
+            fos.close();
+        } catch (FileNotFoundException e) {
+            Log.d(TAG, "File not found: " + e.getMessage());
+        } catch (IOException e) {
+            Log.d(TAG, "Error accessing file: " + e.getMessage());
+        }
+        return Uri.fromFile(returnAudioFile);
+    }
+
+    private File createAudioFile() throws IOException {
+        // Create an image file name
+        String timeStamp = new SimpleDateFormat("yyyyMMdd-HHmmss").format(new Date());
+        String audioFileNamePrefix = "audio-" + timeStamp;
+        File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
+
+        File audioFile = File.createTempFile(
+                audioFileNamePrefix,    /* prefix */
+                ".3gp",                 /* suffix */
+                storageDir              /* directory */
+        );
+        return audioFile;
+    }
+
+    private void createAudioMessage(Uri uri) {
+        if (uri == null) {
+            Log.e(TAG, "Could not create audio message with null uri");
+            return;
+        }
+
+        final StorageReference audioReference = MessageUtil.getAudioStorageReference(mUser, uri);
+        UploadTask uploadTask = audioReference.putFile(uri);
+
+        // Register observers to listen for when task is done or if it fails
+        uploadTask.addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception exception) {
+                Log.e(TAG, "Failed to upload audio message");
+            }
+        }).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+            @Override
+            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+
+                ChatMessage chatMessage = new
+                        ChatMessage(mMessageEditText.getText().toString(),
+                        mUsername,
+                        mPhotoUrl, audioReference.toString(), 1);
+                MessageUtil.send(chatMessage, mChannelName);
+                mMessageEditText.setText("");
+
             }
         });
     }

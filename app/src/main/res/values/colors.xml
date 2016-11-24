@@ -3,7 +3,7 @@
     <color name="colorPrimary">#3F51B5</color>
     <color name="colorPrimaryDark">#303F9F</color>
     <color name="colorAccent">#FF9800</color>
-    <color name="colorTitle">#212121</color>
+    <color name="colorTitle">#fff</color>
     <color name="colorMessageBackground">#f7f7f7</color>
     <color name="colorMessageBorder">#f7f7f7</color>
     <!-- Deacon Blues -->

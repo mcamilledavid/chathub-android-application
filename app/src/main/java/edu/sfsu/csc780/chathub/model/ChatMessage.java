@@ -35,6 +35,7 @@ public class ChatMessage {
     }
 
     private String imageUrl;
+    private String uri;
 
     public ChatMessage() {
     }
@@ -49,6 +50,12 @@ public class ChatMessage {
     public ChatMessage(String text, String name, String photoUrl, String imageUrl) {
         this(text, name, photoUrl);
         this.imageUrl = imageUrl;
+    }
+
+    //constructor for audio message
+    public ChatMessage(String text, String name, String photoUrl, String uri, int number) {
+        this(text, name, photoUrl);
+        this.uri = uri;
     }
 
     public String getText() {
@@ -74,4 +81,8 @@ public class ChatMessage {
     public void setPhotoUrl(String photoUrl) {
         this.photoUrl = photoUrl;
     }
+
+    public String getUri() {return uri;}
+
+    public void setUri() {this.uri = uri;}
 }
