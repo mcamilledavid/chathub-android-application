@@ -6,8 +6,6 @@ import android.graphics.Bitmap;
 import android.net.Uri;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
-import android.support.v4.app.DialogFragment;
-import android.support.v4.app.FragmentTransaction;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -17,7 +15,6 @@ import android.widget.ImageView;
 import android.widget.TextView;
 
 import com.bumptech.glide.Glide;
-import com.bumptech.glide.load.resource.bitmap.GlideBitmapDrawable;
 import com.bumptech.glide.request.animation.GlideAnimation;
 import com.bumptech.glide.request.target.SimpleTarget;
 import com.firebase.ui.database.FirebaseRecyclerAdapter;
@@ -31,8 +28,6 @@ import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 
 import java.util.Calendar;
-import java.util.HashMap;
-import java.util.Map;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 import edu.sfsu.csc780.chathub.model.ChatMessage;
@@ -47,8 +42,8 @@ public class MessageUtil {
     private static FirebaseAuth sFirebaseAuth;
     public interface MessageLoadListener { public void onLoadComplete(); }
 
-    public static void send(ChatMessage chatMessage, String room_name) {
-        sFirebaseDatabaseReference.child(room_name).push().setValue(chatMessage);
+    public static void send(ChatMessage chatMessage, String mChannelName) {
+        sFirebaseDatabaseReference.child(mChannelName).push().setValue(chatMessage);
     }
 
     public static class MessageViewHolder extends RecyclerView.ViewHolder {
@@ -85,7 +80,7 @@ public class MessageUtil {
                 ChatMessage.class,
                 R.layout.item_message,
                 MessageViewHolder.class,
-                sFirebaseDatabaseReference.child(ChannelActivity.room_name)) {
+                sFirebaseDatabaseReference.child(ChannelActivity.mChannelName)) {
             @Override
             protected void populateViewHolder(final MessageViewHolder viewHolder,
                                               ChatMessage chatMessage, int position) {

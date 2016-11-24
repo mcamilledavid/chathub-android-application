@@ -122,7 +122,7 @@ public class ChannelActivity extends AppCompatActivity
         }
     };
 
-    public static String room_name;
+    public static String mChannelName;
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
@@ -130,8 +130,8 @@ public class ChannelActivity extends AppCompatActivity
         DesignUtils.applyColorfulTheme(this);
         setContentView(R.layout.channel);
 
-        room_name = getIntent().getExtras().get("room_name").toString();
-        setTitle(room_name);
+        mChannelName = getIntent().getExtras().get("mChannelName").toString();
+        setTitle(mChannelName);
 
         mSharedPreferences = PreferenceManager.getDefaultSharedPreferences(this);
         // Set default username is anonymous.
@@ -202,7 +202,7 @@ public class ChannelActivity extends AppCompatActivity
                         ChatMessage(mMessageEditText.getText().toString(),
                         mUsername,
                         mPhotoUrl);
-                MessageUtil.send(chatMessage, room_name);
+                MessageUtil.send(chatMessage, mChannelName);
                 mMessageEditText.setText("");
             }
         });
@@ -428,7 +428,7 @@ public class ChannelActivity extends AppCompatActivity
                         ChatMessage(mMessageEditText.getText().toString(),
                         mUsername,
                         mPhotoUrl, imageReference.toString());
-                MessageUtil.send(chatMessage, room_name);
+                MessageUtil.send(chatMessage, mChannelName);
                 mMessageEditText.setText("");
             }
         });

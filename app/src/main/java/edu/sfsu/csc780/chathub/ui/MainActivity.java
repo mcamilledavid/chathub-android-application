@@ -1,15 +1,12 @@
 package edu.sfsu.csc780.chathub.ui;
 
-import android.app.Activity;
 import android.content.DialogInterface;
 import android.content.Intent;
 import android.content.SharedPreferences;
-import android.content.pm.PackageManager;
-import android.graphics.Bitmap;
-import android.net.Uri;
 import android.os.Bundle;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
+import android.support.design.widget.FloatingActionButton;
 import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -19,10 +16,8 @@ import android.view.MenuItem;
 import android.view.View;
 import android.widget.AdapterView;
 import android.widget.ArrayAdapter;
-import android.widget.Button;
 import android.widget.EditText;
 import android.widget.ListView;
-import android.widget.ProgressBar;
 import android.widget.TextView;
 import android.widget.Toast;
 
@@ -63,13 +58,12 @@ public class MainActivity extends AppCompatActivity
 
     private int mSavedTheme;
 
-    private Button  add_room;
-    private EditText room_name;
+    private FloatingActionButton mAddChannel;
+    private EditText mChannelName;
 
-    private ListView listView;
-    private ArrayAdapter<String> arrayAdapter;
-    private ArrayList<String> list_of_rooms = new ArrayList<>();
-    private String name;
+    private ListView mListView;
+    private ArrayAdapter<String> mArrayAdapter;
+    private ArrayList<String> mChannelList = new ArrayList<>();
     private DatabaseReference root = FirebaseDatabase.getInstance().getReference().getRoot();
 
     @Override
@@ -101,22 +95,17 @@ public class MainActivity extends AppCompatActivity
                 .build();
 
 
-        add_room = (Button) findViewById(R.id.btn_add_room);
-        room_name = (EditText) findViewById(R.id.room_name_edittext);
-        listView = (ListView) findViewById(R.id.listView);
+        mAddChannel = (FloatingActionButton) findViewById(R.id.addChannelButton);
+        mListView = (ListView) findViewById(R.id.listView);
 
-        arrayAdapter = new ArrayAdapter<String>(this,android.R.layout.simple_list_item_1,list_of_rooms);
+        mArrayAdapter = new ArrayAdapter<String>(this,android.R.layout.simple_list_item_1, mChannelList);
 
-        listView.setAdapter(arrayAdapter);
+        mListView.setAdapter(mArrayAdapter);
 
-        add_room.setOnClickListener(new View.OnClickListener() {
+        mAddChannel.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-
-                Map<String,Object> map = new HashMap<String, Object>();
-                map.put(room_name.getText().toString(),"");
-                root.updateChildren(map);
-                room_name.setText("");
+                addChannel();
             }
         });
 
@@ -131,10 +120,10 @@ public class MainActivity extends AppCompatActivity
                     set.add(((DataSnapshot)i.next()).getKey());
                 }
 
-                list_of_rooms.clear();
-                list_of_rooms.addAll(set);
+                mChannelList.clear();
+                mChannelList.addAll(set);
 
-                arrayAdapter.notifyDataSetChanged();
+                mArrayAdapter.notifyDataSetChanged();
             }
 
             @Override
@@ -143,12 +132,12 @@ public class MainActivity extends AppCompatActivity
             }
         });
 
-        listView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+        mListView.setOnItemClickListener(new AdapterView.OnItemClickListener() {
             @Override
             public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
 
                 Intent intent = new Intent(getApplicationContext(), ChannelActivity.class);
-                intent.putExtra("room_name",((TextView)view).getText().toString());
+                intent.putExtra("mChannelName",((TextView)view).getText().toString());
                 startActivity(intent);
             }
         });
@@ -220,6 +209,33 @@ public class MainActivity extends AppCompatActivity
                 this.recreate();
             }
         }
+    }
+
+    private void addChannel() {
+        AlertDialog.Builder builder = new AlertDialog.Builder(this);
+        builder.setTitle("Create a channel");
+
+        mChannelName = new EditText(this);
+
+        builder.setView(mChannelName);
+        builder.setPositiveButton("Create", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                Map<String,Object> map = new HashMap<String, Object>();
+                map.put(mChannelName.getText().toString(),"");
+                root.updateChildren(map);
+                mChannelName.setText("");
+            }
+        });
+
+        builder.setNegativeButton("Cancel", new DialogInterface.OnClickListener() {
+            @Override
+            public void onClick(DialogInterface dialogInterface, int i) {
+                dialogInterface.cancel();
+            }
+        });
+
+        builder.show();
     }
 
 }
