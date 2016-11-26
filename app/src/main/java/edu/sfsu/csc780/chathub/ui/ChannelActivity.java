@@ -123,7 +123,7 @@ public class ChannelActivity extends AppCompatActivity
             // Only show the larger view in dialog if there's a image for the message
             if (photoView.getVisibility() == View.VISIBLE) {
                 Bitmap bitmap = ((GlideBitmapDrawable) photoView.getDrawable()).getBitmap();
-                showPhotoDialog( ImageDialogFragment.newInstance(bitmap));
+                showPhotoDialog(ImageDialogFragment.newInstance(bitmap));
             }
         }
     };
@@ -311,7 +311,7 @@ public class ChannelActivity extends AppCompatActivity
         mDrawButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // TODO: Add code when draw button is selected
+                startActivity(new Intent(ChannelActivity.this, DrawingActivity.class));
             }
         });
     }
@@ -370,7 +370,7 @@ public class ChannelActivity extends AppCompatActivity
     }
 
     private File createAudioFile() throws IOException {
-        // Create an image file name
+        // Create an audio file name
         String timeStamp = new SimpleDateFormat("yyyyMMdd-HHmmss").format(new Date());
         String audioFileNamePrefix = "audio-" + timeStamp;
         File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
@@ -409,6 +409,34 @@ public class ChannelActivity extends AppCompatActivity
                 MessageUtil.send(chatMessage, mChannelName);
                 mMessageEditText.setText("");
 
+            }
+        });
+    }
+
+    public void createDrawingMessage(Uri uri) {
+        if (uri == null) {
+            Log.e(TAG, "Could not create drawing message with null uri");
+            return;
+        }
+
+        final StorageReference drawingReference = MessageUtil.getDrawingStorageReference(mUser, uri);
+        UploadTask uploadTask = drawingReference.putFile(uri);
+
+        // Register observers to listen for when task is done or if it fails
+        uploadTask.addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception exception) {
+                Log.e(TAG, "Failed to upload drawing message");
+            }
+        }).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+            @Override
+            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                ChatMessage chatMessage = new
+                        ChatMessage(mMessageEditText.getText().toString(),
+                        mUsername,
+                        mPhotoUrl, drawingReference.toString());
+                MessageUtil.send(chatMessage, mChannelName);
+                mMessageEditText.setText("");
             }
         });
     }
@@ -685,9 +713,12 @@ public class ChannelActivity extends AppCompatActivity
         // dialog, so make our own transaction and take care of that here.
         FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
         android.support.v4.app.Fragment prev = getSupportFragmentManager().findFragmentByTag("dialog");
-        if (prev != null) { ft.remove(prev); }
+        if (prev != null) {
+            ft.remove(prev);
+        }
         ft.addToBackStack(null);
 
         dialogFragment.show(ft, "dialog");
     }
+
 }

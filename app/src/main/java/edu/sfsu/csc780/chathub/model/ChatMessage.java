@@ -36,6 +36,7 @@ public class ChatMessage {
 
     private String imageUrl;
     private String uri;
+    private String drawingUrl;
 
     public ChatMessage() {
     }
@@ -85,4 +86,8 @@ public class ChatMessage {
     public String getUri() {return uri;}
 
     public void setUri() {this.uri = uri;}
+
+    public String getDrawingUrl() {return drawingUrl;}
+
+    public void setDrawingUrl() {this.drawingUrl = drawingUrl;}
 }

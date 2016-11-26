@@ -1,0 +1,23 @@
+<menu xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
+    tools:context="chathub.csc780.sfsu.edu.chathub.MainActivity">
+
+    <item
+        android:id="@+id/action_undo"
+        android:title="Undo"
+        android:icon="@drawable/ic_undo_variant_white_36dp"
+        app:showAsAction="always" />
+
+    <item
+        android:id="@+id/action_redo"
+        android:title="Redo"
+        android:icon="@drawable/ic_redo_variant_white_36dp"
+        app:showAsAction="always" />
+
+    <item
+        android:id="@+id/action_send"
+        android:title="Send"
+        android:icon="@drawable/ic_send_white_24dp"
+        app:showAsAction="always" />
+</menu>

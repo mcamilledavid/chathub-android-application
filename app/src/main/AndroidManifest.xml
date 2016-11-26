@@ -23,6 +23,8 @@
 
         <activity android:name=".ui.ChannelActivity" />
 
+        <activity android:name=".ui.DrawingActivity" />
+
         <activity android:name=".ui.SignInActivity" />
 
         <activity android:name=".ui.PreferencesActivity" />

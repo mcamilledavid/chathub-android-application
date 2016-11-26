@@ -44,6 +44,7 @@ public class MessageUtil {
             FirebaseDatabase.getInstance().getReference();
     private static FirebaseStorage sStorage = FirebaseStorage.getInstance();
     private static FirebaseStorage aStorage = FirebaseStorage.getInstance();
+    private static FirebaseStorage dStorage = FirebaseStorage.getInstance();
     private static MessageLoadListener sAdapterListener;
     private static FirebaseAuth sFirebaseAuth;
     public interface MessageLoadListener { public void onLoadComplete(); }
@@ -208,6 +209,34 @@ public class MessageUtil {
                     viewHolder.messageTextView.setVisibility(View.VISIBLE);
                 }
 
+                if (chatMessage.getDrawingUrl() != null) {
+
+                    viewHolder.messageImageView.setVisibility(View.VISIBLE);
+                    viewHolder.messageTextView.setVisibility(View.GONE);
+                    viewHolder.messageButtonView.setVisibility(View.GONE);
+
+                    try {
+                        final StorageReference gsReference =
+                                dStorage.getReferenceFromUrl(chatMessage.getDrawingUrl());
+                        gsReference.getDownloadUrl().addOnSuccessListener(new OnSuccessListener<Uri>() {
+                            @Override
+                            public void onSuccess(Uri uri) {
+                                Glide.with(activity)
+                                        .load(uri)
+                                        .into(viewHolder.messageImageView);
+                            }
+                        }).addOnFailureListener(new OnFailureListener() {
+                            @Override
+                            public void onFailure(@NonNull Exception exception) {
+                                Log.e(LOG_TAG, "Could not load drawing for message", exception);
+                            }
+                        });
+                    } catch (IllegalArgumentException e) {
+                        viewHolder.messageTextView.setText("Error loading drawing");
+                        Log.e(LOG_TAG, e.getMessage() + " : " + chatMessage.getDrawingUrl());
+                    }
+                }
+
                 long timestamp = chatMessage.getTimestamp();
                 if (timestamp == 0 || timestamp == chatMessage.NO_TIMESTAMP ) {
                     viewHolder.timestampTextView.setVisibility(View.GONE);
@@ -238,7 +267,7 @@ public class MessageUtil {
     public static StorageReference getAudioStorageReference(FirebaseUser user, Uri uri){
         long nowMs = Calendar.getInstance().getTimeInMillis();
 
-        return aStorage.getReference().child("Audio"+"/"+user.getUid()+"/"+uri
+        return aStorage.getReference().child("Audio"+ "/" + user.getUid() + "/" + uri
                 .getLastPathSegment());
     }
 
@@ -247,6 +276,14 @@ public class MessageUtil {
         long nowMs = Calendar.getInstance().getTimeInMillis();
 
         return sStorage.getReference().child(user.getUid() + "/" + nowMs + "/" + uri
+                .getLastPathSegment());
+    }
+
+    public static StorageReference getDrawingStorageReference(FirebaseUser user, Uri uri) {
+        //Create a blob storage reference with path : bucket/userId/timeMs/filename
+        long nowMs = Calendar.getInstance().getTimeInMillis();
+
+        return dStorage.getReference().child("Drawing" + "/" + user.getUid() + "/" + uri
                 .getLastPathSegment());
     }
 
