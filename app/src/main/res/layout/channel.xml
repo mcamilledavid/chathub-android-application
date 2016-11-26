@@ -43,7 +43,7 @@
                 android:textSize="14sp"
                 android:inputType="textMultiLine"
                 android:layout_marginLeft="10dp"
-                android:hint="Type a message"
+                android:hint="Send a message"
                 android:background="@null"
                 android:textCursorDrawable="@null"
                 android:layout_toEndOf="@+id/addButton" />

@@ -243,6 +243,7 @@ public class ChannelActivity extends AppCompatActivity
             @Override
             public void onClick(View v) {
                 pickImage();
+                mBottomSheetDialog.hide();
             }
         });
 
@@ -251,6 +252,7 @@ public class ChannelActivity extends AppCompatActivity
             @Override
             public void onClick(View v) {
                 dispatchTakePhotoIntent();
+                mBottomSheetDialog.hide();
             }
         });
 
@@ -259,6 +261,7 @@ public class ChannelActivity extends AppCompatActivity
             @Override
             public void onClick(View v) {
                 loadMap();
+                mBottomSheetDialog.hide();
             }
         });
 
@@ -283,6 +286,7 @@ public class ChannelActivity extends AppCompatActivity
                 }else if(motionEvent.getAction() == MotionEvent.ACTION_UP){
 
                     stopRecording();
+                    mBottomSheetDialog.hide();
 
                     Context context = getApplicationContext();
                     CharSequence text = "Recording Stopped!";
@@ -303,7 +307,7 @@ public class ChannelActivity extends AppCompatActivity
         mStickerButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // TODO: Add code when sticker button is selected
+                mBottomSheetDialog.hide();
             }
         });
 
@@ -312,6 +316,7 @@ public class ChannelActivity extends AppCompatActivity
             @Override
             public void onClick(View v) {
                 startActivity(new Intent(ChannelActivity.this, DrawingActivity.class));
+                mBottomSheetDialog.hide();
             }
         });
     }
@@ -409,34 +414,6 @@ public class ChannelActivity extends AppCompatActivity
                 MessageUtil.send(chatMessage, mChannelName);
                 mMessageEditText.setText("");
 
-            }
-        });
-    }
-
-    public void createDrawingMessage(Uri uri) {
-        if (uri == null) {
-            Log.e(TAG, "Could not create drawing message with null uri");
-            return;
-        }
-
-        final StorageReference drawingReference = MessageUtil.getDrawingStorageReference(mUser, uri);
-        UploadTask uploadTask = drawingReference.putFile(uri);
-
-        // Register observers to listen for when task is done or if it fails
-        uploadTask.addOnFailureListener(new OnFailureListener() {
-            @Override
-            public void onFailure(@NonNull Exception exception) {
-                Log.e(TAG, "Failed to upload drawing message");
-            }
-        }).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
-            @Override
-            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
-                ChatMessage chatMessage = new
-                        ChatMessage(mMessageEditText.getText().toString(),
-                        mUsername,
-                        mPhotoUrl, drawingReference.toString());
-                MessageUtil.send(chatMessage, mChannelName);
-                mMessageEditText.setText("");
             }
         });
     }

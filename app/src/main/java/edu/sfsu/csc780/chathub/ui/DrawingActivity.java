@@ -9,7 +9,9 @@ import android.net.Uri;
 import android.os.Bundle;
 import android.os.Environment;
 import android.preference.PreferenceManager;
+import android.provider.MediaStore;
 import android.support.annotation.NonNull;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.Toolbar;
 import android.util.Log;
@@ -108,8 +110,8 @@ public class DrawingActivity extends AppCompatActivity implements GoogleApiClien
                 break;
             case R.id.action_send:
                 Uri uri = saveDrawing(drawingBitmap);
-                ChannelActivity drawing = new ChannelActivity();
-                drawing.createDrawingMessage(uri);
+                createDrawingMessage(uri);
+                finish();
                 break;
         }
     }
@@ -163,7 +165,6 @@ public class DrawingActivity extends AppCompatActivity implements GoogleApiClien
     private Uri saveDrawing(Bitmap drawingBitmap) {
         File drawingFile = null;
         try {
-            mCustomView.setDrawingCacheEnabled(true);
             drawingFile = createDrawingFile();
         } catch (IOException e) {
             e.printStackTrace();
@@ -174,8 +175,10 @@ public class DrawingActivity extends AppCompatActivity implements GoogleApiClien
         }
 
         try {
-            mCustomView.setDrawingCacheEnabled(true);
             FileOutputStream fos = new FileOutputStream(drawingFile);
+            mCustomView.setDrawingCacheEnabled(true);
+            mCustomView.setDrawingCacheBackgroundColor(0xfff7f7f7);
+            mCustomView.invalidate();
             if (mCustomView.getDrawingCache() == null) {
                 Log.e(TAG,"Unable to get drawing cache.");
             }
@@ -224,5 +227,32 @@ public class DrawingActivity extends AppCompatActivity implements GoogleApiClien
     @Override
     public void onDestroy() {
         super.onDestroy();
+    }
+
+    public void createDrawingMessage(Uri uri) {
+        if (uri == null) {
+            Log.e(TAG, "Could not create drawing message with null uri");
+            return;
+        }
+
+        final StorageReference drawingReference = MessageUtil.getDrawingStorageReference(mUser, uri);
+        UploadTask uploadTask = drawingReference.putFile(uri);
+
+        // Register observers to listen for when task is done or if it fails
+        uploadTask.addOnFailureListener(new OnFailureListener() {
+            @Override
+            public void onFailure(@NonNull Exception exception) {
+                Log.e(TAG, "Failed to upload drawing message");
+            }
+        }).addOnSuccessListener(new OnSuccessListener<UploadTask.TaskSnapshot>() {
+            @Override
+            public void onSuccess(UploadTask.TaskSnapshot taskSnapshot) {
+                ChatMessage chatMessage = new
+                        ChatMessage(null,
+                        mUsername,
+                        mPhotoUrl, drawingReference.toString());
+                MessageUtil.send(chatMessage, ChannelActivity.mChannelName);
+            }
+        });
     }
 }

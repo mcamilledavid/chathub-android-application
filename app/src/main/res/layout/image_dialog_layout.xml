@@ -8,7 +8,7 @@
         android:layout_width="240dp"
         android:layout_height="240dp"
         android:padding="10dp"
-        android:background="#ffffff"
+        android:background="#f7f7f7"
         android:id="@+id/photoImageView"
         tools:src="@drawable/common_ic_googleplayservices"
         android:scaleType="fitCenter"

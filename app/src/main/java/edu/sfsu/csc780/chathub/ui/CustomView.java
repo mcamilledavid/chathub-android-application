@@ -40,7 +40,7 @@ public class CustomView extends View {
     private ArrayList<Path> undonePaths = new ArrayList<Path>();
 
     private float mX, mY;
-    private static final float TOUCH_TOLERANCE = 9;
+    private static final float TOUCH_TOLERANCE = 4;
 
     public CustomView(Context context, AttributeSet attrs) {
         super(context, attrs);
