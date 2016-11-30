@@ -79,6 +79,14 @@ import java.util.Date;
 import edu.sfsu.csc780.chathub.R;
 import edu.sfsu.csc780.chathub.model.ChatMessage;
 
+import vc908.stickerfactory.StickersKeyboardController;
+import vc908.stickerfactory.StickersManager;
+import vc908.stickerfactory.ui.OnStickerSelectedListener;
+import vc908.stickerfactory.ui.fragment.StickersFragment;
+import vc908.stickerfactory.ui.view.BadgedStickersButton;
+import vc908.stickerfactory.ui.view.StickersKeyboardLayout;
+import vc908.stickerfactory.utils.CompatUtils;
+
 public class ChannelActivity extends AppCompatActivity
         implements GoogleApiClient.OnConnectionFailedListener,
         MessageUtil.MessageLoadListener {
@@ -112,9 +120,11 @@ public class ChannelActivity extends AppCompatActivity
     private ImageButton mAudioButton;
     private ImageButton mAddButton;
     private ImageButton mDrawButton;
-    private ImageButton mStickerButton;
+    private BadgedStickersButton mStickerButton;
     private int mSavedTheme;
     private ImageButton mLocationButton;
+
+    private StickersKeyboardController stickersKeyboardController;
 
     private View.OnClickListener mImageClickListener = new View.OnClickListener() {
         @Override
@@ -140,7 +150,10 @@ public class ChannelActivity extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         DesignUtils.applyColorfulTheme(this);
-        setContentView(R.layout.channel);
+        setContentView(R.layout.activity_channel);
+
+        StickersManager.initialize("fde0f6b3b7a6c68c2832296a82095c5d", this);
+        StickersManager.setUserID("some unique user id");
 
         mChannelName = getIntent().getExtras().get("mChannelName").toString();
         setTitle(mChannelName);
@@ -226,7 +239,6 @@ public class ChannelActivity extends AppCompatActivity
                 openBottomSheet();
             }
         });
-
     }
 
     public void openBottomSheet() {
@@ -303,13 +315,24 @@ public class ChannelActivity extends AppCompatActivity
         mFileName = Environment.getExternalStorageDirectory().getAbsolutePath();
         mFileName += "/recorded_audio.3gp";
 
-        mStickerButton = (ImageButton) mBottomSheetDialog.findViewById(R.id.stickerButton);
-        mStickerButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                mBottomSheetDialog.hide();
-            }
-        });
+        mStickerButton = (BadgedStickersButton) mBottomSheetDialog.findViewById(R.id.stickerButton);
+        StickersFragment stickersFragment = (StickersFragment) getSupportFragmentManager().findFragmentById(R.id.frame);
+        if (stickersFragment == null) {
+            stickersFragment = new StickersFragment();
+            getSupportFragmentManager().beginTransaction().replace(R.id.frame, stickersFragment).commit();
+        }
+        stickersFragment.setOnStickerSelectedListener(stickerSelectedListener);
+        View stickersFrame = findViewById(R.id.frame);
+        View chatContentGroup = findViewById(R.id.chat_content);
+        StickersKeyboardLayout stickersLayout = (StickersKeyboardLayout) findViewById(R.id.sizeNotifierLayout);
+        stickersKeyboardController = new StickersKeyboardController.Builder(this)
+                .setStickersKeyboardLayout(stickersLayout)
+                .setStickersFragment(stickersFragment)
+                .setStickersFrame(stickersFrame)
+                .setContentContainer(chatContentGroup)
+                .setStickersButton(mStickerButton)
+                .setChatEdit(mMessageEditText)
+                .build();
 
         mDrawButton = (ImageButton) mBottomSheetDialog.findViewById(R.id.drawButton);
         mDrawButton.setOnClickListener(new View.OnClickListener() {
@@ -696,6 +719,28 @@ public class ChannelActivity extends AppCompatActivity
         ft.addToBackStack(null);
 
         dialogFragment.show(ft, "dialog");
+    }
+
+    private OnStickerSelectedListener stickerSelectedListener = new OnStickerSelectedListener() {
+        @Override
+        public void onStickerSelected(String code) {
+            ChatMessage chatMessage = new
+                    ChatMessage(mMessageEditText.getText().toString(),
+                    mUsername,
+                    mPhotoUrl);
+            MessageUtil.send(chatMessage, mChannelName);
+        }
+
+        @Override
+        public void onEmojiSelected(String emoji) {
+            mMessageEditText.append(emoji);
+        }
+    };
+
+    private void loadSticker(ImageView convertView, String message) {
+        StickersManager.with(ChannelActivity.this)
+                .loadSticker(message)
+                .into((convertView));
     }
 
 }

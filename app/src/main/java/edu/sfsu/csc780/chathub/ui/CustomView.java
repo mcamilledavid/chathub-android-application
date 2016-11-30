@@ -26,11 +26,11 @@ public class CustomView extends View {
     //initial color
     private int paintColor = 0xFF000000;
 
-    //canvas - holding pen, holds your drawings
+    //activity_canvas - holding pen, holds your drawings
     //and transfers them to the view
     private Canvas drawCanvas;
 
-    //canvas bitmap
+    //activity_canvas bitmap
     private Bitmap canvasBitmap;
 
     //brush size
@@ -92,7 +92,7 @@ public class CustomView extends View {
 
     @Override
     protected void onSizeChanged(int w, int h, int oldw, int oldh) {
-        //create canvas of certain device size.
+        //create activity_canvas of certain device size.
         super.onSizeChanged(w, h, oldw, oldh);
 
         //create Bitmap of certain w,h

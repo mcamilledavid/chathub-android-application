@@ -124,7 +124,7 @@
                 android:layout_weight="1"
                 android:gravity="center"
                 android:orientation="vertical">
-                <ImageButton
+                <vc908.stickerfactory.ui.view.BadgedStickersButton
                     android:id="@+id/stickerButton"
                     android:src="@drawable/ic_mood_black_24dp"
                     android:background="@drawable/button_ripple"

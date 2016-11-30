@@ -32,6 +32,11 @@
 
         <activity android:name=".ui.PreferencesActivity" />
 
+        <provider
+            android:name="vc908.stickerfactory.provider.StickersProvider"
+            android:authorities="edu.sfsu.csc780.chathub.stickersProvider"
+            android:exported="false"/>
+
     </application>
 
 </manifest>
