@@ -8,6 +8,7 @@ import android.media.MediaPlayer;
 import android.net.Uri;
 import android.preference.PreferenceManager;
 import android.support.annotation.NonNull;
+import android.support.v4.app.Fragment;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -17,6 +18,7 @@ import android.widget.Button;
 import android.widget.ImageView;
 import android.widget.TextView;
 import android.widget.Toast;
+import android.support.v4.app.Fragment;
 
 import com.bumptech.glide.Glide;
 import com.bumptech.glide.request.animation.GlideAnimation;
@@ -32,11 +34,14 @@ import com.google.firebase.storage.FirebaseStorage;
 import com.google.firebase.storage.StorageReference;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.Calendar;
 
 import de.hdodenhof.circleimageview.CircleImageView;
 import edu.sfsu.csc780.chathub.model.ChatMessage;
 import edu.sfsu.csc780.chathub.R;
+import vc908.stickerfactory.StickersManager;
+import vc908.stickerfactory.ui.fragment.StickersFragment;
 
 public class MessageUtil {
     private static final String LOG_TAG = MessageUtil.class.getSimpleName();
@@ -62,6 +67,8 @@ public class MessageUtil {
         public TextView timestampTextView;
         public View messageLayout;
         public Button messageButtonView;
+        public String stickerCode;
+        public ImageView messageSticker;
 
         public MessageViewHolder(View v) {
             super(v);
@@ -73,6 +80,7 @@ public class MessageUtil {
             messageLayout = (View) itemView.findViewById(R.id.messageLayout);
             v.setOnClickListener(sMessageViewListener);
             messageButtonView = (Button) itemView.findViewById(R.id.messageButtonView);
+            messageSticker = (ImageView) itemView.findViewById(R.id.chat_item_sticker);
         }
     }
 
@@ -132,6 +140,7 @@ public class MessageUtil {
                     viewHolder.messageImageView.setVisibility(View.GONE);
                     viewHolder.messageTextView.setVisibility(View.GONE);
                     viewHolder.messageButtonView.setVisibility(View.VISIBLE);
+                    viewHolder.messageSticker.setVisibility(View.GONE);
 
                     try{
                         final StorageReference audioReference = aStorage.getReferenceFromUrl(chatMessage.getUri());
@@ -183,6 +192,7 @@ public class MessageUtil {
                     viewHolder.messageImageView.setVisibility(View.VISIBLE);
                     viewHolder.messageTextView.setVisibility(View.GONE);
                     viewHolder.messageButtonView.setVisibility(View.GONE);
+                    viewHolder.messageSticker.setVisibility(View.GONE);
 
                     try {
                         final StorageReference gsReference =
@@ -207,6 +217,7 @@ public class MessageUtil {
                 } else {
                     viewHolder.messageImageView.setVisibility(View.GONE);
                     viewHolder.messageTextView.setVisibility(View.VISIBLE);
+                    viewHolder.messageSticker.setVisibility(View.GONE);
                 }
 
                 if (chatMessage.getDrawingUrl() != null) {
@@ -214,6 +225,7 @@ public class MessageUtil {
                     viewHolder.messageImageView.setVisibility(View.VISIBLE);
                     viewHolder.messageTextView.setVisibility(View.GONE);
                     viewHolder.messageButtonView.setVisibility(View.GONE);
+                    viewHolder.messageSticker.setVisibility(View.GONE);
 
                     try {
                         final StorageReference gsReference =
@@ -235,6 +247,17 @@ public class MessageUtil {
                         viewHolder.messageTextView.setText("Error loading drawing");
                         Log.e(LOG_TAG, e.getMessage() + " : " + chatMessage.getDrawingUrl());
                     }
+                }
+
+                if (chatMessage.getStickerCode() != null) {
+
+                    viewHolder.messageImageView.setVisibility(View.GONE);
+                    viewHolder.messageTextView.setVisibility(View.GONE);
+                    viewHolder.messageButtonView.setVisibility(View.GONE);
+                    viewHolder.messageSticker.setVisibility(View.VISIBLE);
+
+                    ((ChannelActivity)activity).loadSticker(viewHolder.messageSticker, chatMessage.getStickerCode());
+
                 }
 
                 long timestamp = chatMessage.getTimestamp();

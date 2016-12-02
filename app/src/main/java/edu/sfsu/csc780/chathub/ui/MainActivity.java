@@ -214,7 +214,7 @@ public class MainActivity extends AppCompatActivity
     private void addChannel() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
         builder.setTitle("Create A New Channel");
-        builder.setMessage("This will create a new activity_channel that anyone can join. Channels are best when organized around a topic.");
+        builder.setMessage("This will create a new channel that anyone can join. Channels are best when organized around a topic.");
 
         mChannelName = new EditText(this);
         builder.setView(mChannelName, 50, 0, 50, 0);

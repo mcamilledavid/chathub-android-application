@@ -32,6 +32,7 @@ import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
 import android.support.v4.app.DialogFragment;
+import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.app.LoaderManager;
 import android.support.v4.content.Loader;
@@ -73,6 +74,7 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.lang.reflect.Field;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 
@@ -723,12 +725,8 @@ public class ChannelActivity extends AppCompatActivity
 
     private OnStickerSelectedListener stickerSelectedListener = new OnStickerSelectedListener() {
         @Override
-        public void onStickerSelected(String code) {
-            ChatMessage chatMessage = new
-                    ChatMessage(mMessageEditText.getText().toString(),
-                    mUsername,
-                    mPhotoUrl);
-            MessageUtil.send(chatMessage, mChannelName);
+        public void onStickerSelected(String stickerCode) {
+            sendSticker(stickerCode);
         }
 
         @Override
@@ -737,10 +735,21 @@ public class ChannelActivity extends AppCompatActivity
         }
     };
 
-    private void loadSticker(ImageView convertView, String message) {
+    public void loadSticker(ImageView view, String message) {
         StickersManager.with(ChannelActivity.this)
                 .loadSticker(message)
-                .into((convertView));
+                .into((view));
+    }
+
+    private void sendSticker(String stickerCode) {
+        if (StickersManager.isSticker(stickerCode)) {
+            ChatMessage chatMessage = new
+                    ChatMessage(mMessageEditText.getText().toString(),
+                    mUsername,
+                    mPhotoUrl, null, stickerCode);
+            MessageUtil.send(chatMessage, mChannelName);
+            StickersManager.onUserMessageSent(true);
+        }
     }
 
 }
