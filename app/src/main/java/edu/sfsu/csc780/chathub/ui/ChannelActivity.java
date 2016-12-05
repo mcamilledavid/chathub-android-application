@@ -15,6 +15,7 @@
  */
 package edu.sfsu.csc780.chathub.ui;
 
+import android.Manifest;
 import android.app.Activity;
 import android.app.Dialog;
 import android.app.ProgressDialog;
@@ -26,16 +27,20 @@ import android.graphics.Bitmap;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.DialogFragment;
 import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.app.LoaderManager;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.content.Loader;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -100,6 +105,7 @@ public class ChannelActivity extends AppCompatActivity
     private static final double MAX_LINEAR_DIMENSION = 500.0;
     public static final String ANONYMOUS = "anonymous";
     private static final int REQUEST_PICK_IMAGE = 1;
+    private static final int REQUEST_RECORD_AUDIO = 4;
     private String mUsername;
     private String mPhotoUrl;
     private SharedPreferences mSharedPreferences;
@@ -241,6 +247,32 @@ public class ChannelActivity extends AppCompatActivity
                 openBottomSheet();
             }
         });
+
+        if (ContextCompat.checkSelfPermission(ChannelActivity.this,
+                Manifest.permission.RECORD_AUDIO)
+                != PackageManager.PERMISSION_GRANTED) {
+
+            // Should we show an explanation?
+            if (ActivityCompat.shouldShowRequestPermissionRationale(ChannelActivity.this,
+                    Manifest.permission.RECORD_AUDIO)) {
+
+                // Show an expanation to the user *asynchronously* -- don't block
+                // this thread waiting for the user's response! After the user
+                // sees the explanation, try again to request the permission.
+
+            } else {
+
+                // No explanation needed, we can request the permission.
+
+                ActivityCompat.requestPermissions(ChannelActivity.this,
+                        new String[]{Manifest.permission.RECORD_AUDIO},
+                        REQUEST_RECORD_AUDIO);
+
+                // MY_PERMISSIONS_REQUEST_READ_CONTACTS is an
+                // app-defined int constant. The callback method gets the
+                // result of the request.
+            }
+        }
     }
 
     public void openBottomSheet() {
@@ -363,12 +395,19 @@ public class ChannelActivity extends AppCompatActivity
     }
 
     private void stopRecording() {
-        mRecorder.stop();
-        mRecorder.release();
-        mRecorder = null;
-
-        Uri uri = saveAudio(mFileName);
-        createAudioMessage(uri);
+        int shortRecording = 0;
+        try {
+            mRecorder.stop();
+            mRecorder.release();
+            mRecorder = null;
+        }catch(Exception exception){
+            shortRecording = 1;
+        }
+        if(shortRecording == 0) {
+            Uri uri = saveAudio(mFileName);
+            createAudioMessage(uri);
+        }
+        shortRecording = 0;
     }
 
     private Uri saveAudio(String mFileName) {
@@ -751,5 +790,4 @@ public class ChannelActivity extends AppCompatActivity
             StickersManager.onUserMessageSent(true);
         }
     }
-
 }
