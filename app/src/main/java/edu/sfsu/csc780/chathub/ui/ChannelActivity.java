@@ -15,6 +15,7 @@
  */
 package edu.sfsu.csc780.chathub.ui;
 
+import android.Manifest;
 import android.app.Activity;
 import android.app.Dialog;
 import android.app.ProgressDialog;
@@ -22,19 +23,26 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.content.res.AssetManager;
 import android.graphics.Bitmap;
+import android.graphics.Typeface;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.net.Uri;
+import android.os.Build;
 import android.os.Bundle;
 import android.os.Environment;
 import android.preference.PreferenceManager;
 import android.provider.MediaStore;
 import android.support.annotation.NonNull;
+import android.support.v4.app.ActivityCompat;
 import android.support.v4.app.DialogFragment;
+import android.support.v4.app.Fragment;
 import android.support.v4.app.FragmentTransaction;
 import android.support.v4.app.LoaderManager;
+import android.support.v4.content.ContextCompat;
 import android.support.v4.content.Loader;
+import android.support.v7.app.AlertDialog;
 import android.support.v7.app.AppCompatActivity;
 import android.support.v7.widget.LinearLayoutManager;
 import android.support.v7.widget.RecyclerView;
@@ -73,11 +81,21 @@ import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.RandomAccessFile;
+import java.lang.reflect.Field;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 
 import edu.sfsu.csc780.chathub.R;
 import edu.sfsu.csc780.chathub.model.ChatMessage;
+
+import vc908.stickerfactory.StickersKeyboardController;
+import vc908.stickerfactory.StickersManager;
+import vc908.stickerfactory.ui.OnStickerSelectedListener;
+import vc908.stickerfactory.ui.fragment.StickersFragment;
+import vc908.stickerfactory.ui.view.BadgedStickersButton;
+import vc908.stickerfactory.ui.view.StickersKeyboardLayout;
+import vc908.stickerfactory.utils.CompatUtils;
 
 public class ChannelActivity extends AppCompatActivity
         implements GoogleApiClient.OnConnectionFailedListener,
@@ -86,14 +104,21 @@ public class ChannelActivity extends AppCompatActivity
     private static final String TAG = "ChannelActivity";
     private static final int REQUEST_TAKE_PHOTO = 3;
     public static final int REQUEST_PREFERENCES = 2;
+    public static final int REQUEST_WRITE_EXTERNAL_STORAGE = 5;
     public static final int MSG_LENGTH_LIMIT = 64;
     private static final double MAX_LINEAR_DIMENSION = 500.0;
     public static final String ANONYMOUS = "anonymous";
     private static final int REQUEST_PICK_IMAGE = 1;
+    private static final int REQUEST_RECORD_AUDIO = 4;
     private String mUsername;
     private String mPhotoUrl;
     private SharedPreferences mSharedPreferences;
     private GoogleApiClient mGoogleApiClient;
+    private static String RECORD_AUDIO = Manifest.permission.RECORD_AUDIO;
+    private static String WRITE_EXTERNAL_STORAGE = Manifest.permission.WRITE_EXTERNAL_STORAGE;
+    private static int GRANTED = PackageManager.PERMISSION_GRANTED;
+    private static final String[] AUDIO_PERMISSIONS =
+            {RECORD_AUDIO, WRITE_EXTERNAL_STORAGE};
 
     private ImageButton mSendButton;
     private RecyclerView mMessageRecyclerView;
@@ -112,9 +137,11 @@ public class ChannelActivity extends AppCompatActivity
     private ImageButton mAudioButton;
     private ImageButton mAddButton;
     private ImageButton mDrawButton;
-    private ImageButton mStickerButton;
+    private BadgedStickersButton mStickerButton;
     private int mSavedTheme;
     private ImageButton mLocationButton;
+
+    private StickersKeyboardController stickersKeyboardController;
 
     private View.OnClickListener mImageClickListener = new View.OnClickListener() {
         @Override
@@ -123,7 +150,7 @@ public class ChannelActivity extends AppCompatActivity
             // Only show the larger view in dialog if there's a image for the message
             if (photoView.getVisibility() == View.VISIBLE) {
                 Bitmap bitmap = ((GlideBitmapDrawable) photoView.getDrawable()).getBitmap();
-                showPhotoDialog( ImageDialogFragment.newInstance(bitmap));
+                showPhotoDialog(ImageDialogFragment.newInstance(bitmap));
             }
         }
     };
@@ -140,7 +167,10 @@ public class ChannelActivity extends AppCompatActivity
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         DesignUtils.applyColorfulTheme(this);
-        setContentView(R.layout.channel);
+        setContentView(R.layout.activity_channel);
+
+        StickersManager.initialize("fde0f6b3b7a6c68c2832296a82095c5d", this);
+        StickersManager.setUserID("some unique user id");
 
         mChannelName = getIntent().getExtras().get("mChannelName").toString();
         setTitle(mChannelName);
@@ -227,6 +257,15 @@ public class ChannelActivity extends AppCompatActivity
             }
         });
 
+        if (ActivityCompat.checkSelfPermission(ChannelActivity.this,
+                Manifest.permission.RECORD_AUDIO) !=
+                PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(ChannelActivity.this,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE) !=
+                PackageManager.PERMISSION_GRANTED) {
+            Log.d(LOG_TAG, "requesting permissions for starting");
+            ActivityCompat.requestPermissions(ChannelActivity.this, AUDIO_PERMISSIONS, REQUEST_RECORD_AUDIO);
+            return;
+        }
     }
 
     public void openBottomSheet() {
@@ -243,6 +282,7 @@ public class ChannelActivity extends AppCompatActivity
             @Override
             public void onClick(View v) {
                 pickImage();
+                mBottomSheetDialog.hide();
             }
         });
 
@@ -251,6 +291,7 @@ public class ChannelActivity extends AppCompatActivity
             @Override
             public void onClick(View v) {
                 dispatchTakePhotoIntent();
+                mBottomSheetDialog.hide();
             }
         });
 
@@ -259,6 +300,7 @@ public class ChannelActivity extends AppCompatActivity
             @Override
             public void onClick(View v) {
                 loadMap();
+                mBottomSheetDialog.hide();
             }
         });
 
@@ -283,6 +325,7 @@ public class ChannelActivity extends AppCompatActivity
                 }else if(motionEvent.getAction() == MotionEvent.ACTION_UP){
 
                     stopRecording();
+                    mBottomSheetDialog.hide();
 
                     Context context = getApplicationContext();
                     CharSequence text = "Recording Stopped!";
@@ -299,19 +342,31 @@ public class ChannelActivity extends AppCompatActivity
         mFileName = Environment.getExternalStorageDirectory().getAbsolutePath();
         mFileName += "/recorded_audio.3gp";
 
-        mStickerButton = (ImageButton) mBottomSheetDialog.findViewById(R.id.stickerButton);
-        mStickerButton.setOnClickListener(new View.OnClickListener() {
-            @Override
-            public void onClick(View v) {
-                // TODO: Add code when sticker button is selected
-            }
-        });
+        mStickerButton = (BadgedStickersButton) mBottomSheetDialog.findViewById(R.id.stickerButton);
+        StickersFragment stickersFragment = (StickersFragment) getSupportFragmentManager().findFragmentById(R.id.frame);
+        if (stickersFragment == null) {
+            stickersFragment = new StickersFragment();
+            getSupportFragmentManager().beginTransaction().replace(R.id.frame, stickersFragment).commit();
+        }
+        stickersFragment.setOnStickerSelectedListener(stickerSelectedListener);
+        View stickersFrame = findViewById(R.id.frame);
+        View chatContentGroup = findViewById(R.id.chat_content);
+        StickersKeyboardLayout stickersLayout = (StickersKeyboardLayout) findViewById(R.id.sizeNotifierLayout);
+        stickersKeyboardController = new StickersKeyboardController.Builder(this)
+                .setStickersKeyboardLayout(stickersLayout)
+                .setStickersFragment(stickersFragment)
+                .setStickersFrame(stickersFrame)
+                .setContentContainer(chatContentGroup)
+                .setStickersButton(mStickerButton)
+                .setChatEdit(mMessageEditText)
+                .build();
 
         mDrawButton = (ImageButton) mBottomSheetDialog.findViewById(R.id.drawButton);
         mDrawButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
-                // TODO: Add code when draw button is selected
+                startActivity(new Intent(ChannelActivity.this, DrawingActivity.class));
+                mBottomSheetDialog.hide();
             }
         });
     }
@@ -333,12 +388,19 @@ public class ChannelActivity extends AppCompatActivity
     }
 
     private void stopRecording() {
-        mRecorder.stop();
-        mRecorder.release();
-        mRecorder = null;
-
-        Uri uri = saveAudio(mFileName);
-        createAudioMessage(uri);
+        int shortRecording = 0;
+        try {
+            mRecorder.stop();
+            mRecorder.release();
+            mRecorder = null;
+        }catch(Exception exception){
+            shortRecording = 1;
+        }
+        if(shortRecording == 0) {
+            Uri uri = saveAudio(mFileName);
+            createAudioMessage(uri);
+        }
+        shortRecording = 0;
     }
 
     private Uri saveAudio(String mFileName) {
@@ -370,7 +432,7 @@ public class ChannelActivity extends AppCompatActivity
     }
 
     private File createAudioFile() throws IOException {
-        // Create an image file name
+        // Create an audio file name
         String timeStamp = new SimpleDateFormat("yyyyMMdd-HHmmss").format(new Date());
         String audioFileNamePrefix = "audio-" + timeStamp;
         File storageDir = getExternalFilesDir(Environment.DIRECTORY_PICTURES);
@@ -448,6 +510,7 @@ public class ChannelActivity extends AppCompatActivity
         if (isGranted && requestCode == LocationUtils.REQUEST_CODE) {
             LocationUtils.startLocationUpdates(this);
         }
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 
     @Override
@@ -685,9 +748,41 @@ public class ChannelActivity extends AppCompatActivity
         // dialog, so make our own transaction and take care of that here.
         FragmentTransaction ft = getSupportFragmentManager().beginTransaction();
         android.support.v4.app.Fragment prev = getSupportFragmentManager().findFragmentByTag("dialog");
-        if (prev != null) { ft.remove(prev); }
+        if (prev != null) {
+            ft.remove(prev);
+        }
         ft.addToBackStack(null);
 
         dialogFragment.show(ft, "dialog");
     }
+
+    private OnStickerSelectedListener stickerSelectedListener = new OnStickerSelectedListener() {
+        @Override
+        public void onStickerSelected(String stickerCode) {
+            sendSticker(stickerCode);
+        }
+
+        @Override
+        public void onEmojiSelected(String emoji) {
+            mMessageEditText.append(emoji);
+        }
+    };
+
+    public void loadSticker(ImageView view, String message) {
+        StickersManager.with(ChannelActivity.this)
+                .loadSticker(message)
+                .into((view));
+    }
+
+    private void sendSticker(String stickerCode) {
+        if (StickersManager.isSticker(stickerCode)) {
+            ChatMessage chatMessage = new
+                    ChatMessage(mMessageEditText.getText().toString(),
+                    mUsername,
+                    mPhotoUrl, null, stickerCode);
+            MessageUtil.send(chatMessage, mChannelName);
+            StickersManager.onUserMessageSent(true);
+        }
+    }
+
 }

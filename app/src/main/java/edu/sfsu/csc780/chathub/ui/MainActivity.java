@@ -94,7 +94,6 @@ public class MainActivity extends AppCompatActivity
                 .addApi(Auth.GOOGLE_SIGN_IN_API)
                 .build();
 
-
         mAddChannel = (FloatingActionButton) findViewById(R.id.addChannelButton);
         mListView = (ListView) findViewById(R.id.listView);
 
@@ -213,11 +212,11 @@ public class MainActivity extends AppCompatActivity
 
     private void addChannel() {
         AlertDialog.Builder builder = new AlertDialog.Builder(this);
-        builder.setTitle("Create a channel");
+        builder.setTitle("Create A New Channel");
+        builder.setMessage("This will create a new channel that anyone can join. Channels are best when organized around a topic.");
 
         mChannelName = new EditText(this);
-
-        builder.setView(mChannelName);
+        builder.setView(mChannelName, 50, 0, 50, 0);
         builder.setPositiveButton("Create", new DialogInterface.OnClickListener() {
             @Override
             public void onClick(DialogInterface dialogInterface, int i) {
@@ -237,5 +236,6 @@ public class MainActivity extends AppCompatActivity
 
         builder.show();
     }
+
 
 }

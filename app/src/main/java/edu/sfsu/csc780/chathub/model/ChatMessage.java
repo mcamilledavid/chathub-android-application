@@ -36,6 +36,8 @@ public class ChatMessage {
 
     private String imageUrl;
     private String uri;
+    private String drawingUrl;
+    private String stickerCode;
 
     public ChatMessage() {
     }
@@ -50,6 +52,11 @@ public class ChatMessage {
     public ChatMessage(String text, String name, String photoUrl, String imageUrl) {
         this(text, name, photoUrl);
         this.imageUrl = imageUrl;
+    }
+
+    public ChatMessage(String text, String name, String photoUrl, String imageUrl, String stickerCode) {
+        this(text, name, photoUrl, imageUrl);
+        this.stickerCode = stickerCode;
     }
 
     //constructor for audio message
@@ -85,4 +92,12 @@ public class ChatMessage {
     public String getUri() {return uri;}
 
     public void setUri() {this.uri = uri;}
+
+    public String getDrawingUrl() {return drawingUrl;}
+
+    public void setDrawingUrl() {this.drawingUrl = drawingUrl;}
+
+    public String getStickerCode() {return stickerCode;}
+
+    public void setStickerCode() {this.stickerCode = stickerCode;}
 }
