@@ -94,7 +94,6 @@ public class MainActivity extends AppCompatActivity
                 .addApi(Auth.GOOGLE_SIGN_IN_API)
                 .build();
 
-
         mAddChannel = (FloatingActionButton) findViewById(R.id.addChannelButton);
         mListView = (ListView) findViewById(R.id.listView);
 

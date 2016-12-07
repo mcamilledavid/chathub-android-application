@@ -23,7 +23,9 @@ import android.content.Context;
 import android.content.Intent;
 import android.content.SharedPreferences;
 import android.content.pm.PackageManager;
+import android.content.res.AssetManager;
 import android.graphics.Bitmap;
+import android.graphics.Typeface;
 import android.media.MediaPlayer;
 import android.media.MediaRecorder;
 import android.net.Uri;
@@ -82,6 +84,7 @@ import java.io.RandomAccessFile;
 import java.lang.reflect.Field;
 import java.text.SimpleDateFormat;
 import java.util.Date;
+import java.util.Locale;
 
 import edu.sfsu.csc780.chathub.R;
 import edu.sfsu.csc780.chathub.model.ChatMessage;
@@ -101,6 +104,7 @@ public class ChannelActivity extends AppCompatActivity
     private static final String TAG = "ChannelActivity";
     private static final int REQUEST_TAKE_PHOTO = 3;
     public static final int REQUEST_PREFERENCES = 2;
+    public static final int REQUEST_WRITE_EXTERNAL_STORAGE = 5;
     public static final int MSG_LENGTH_LIMIT = 64;
     private static final double MAX_LINEAR_DIMENSION = 500.0;
     public static final String ANONYMOUS = "anonymous";
@@ -110,6 +114,11 @@ public class ChannelActivity extends AppCompatActivity
     private String mPhotoUrl;
     private SharedPreferences mSharedPreferences;
     private GoogleApiClient mGoogleApiClient;
+    private static String RECORD_AUDIO = Manifest.permission.RECORD_AUDIO;
+    private static String WRITE_EXTERNAL_STORAGE = Manifest.permission.WRITE_EXTERNAL_STORAGE;
+    private static int GRANTED = PackageManager.PERMISSION_GRANTED;
+    private static final String[] AUDIO_PERMISSIONS =
+            {RECORD_AUDIO, WRITE_EXTERNAL_STORAGE};
 
     private ImageButton mSendButton;
     private RecyclerView mMessageRecyclerView;
@@ -248,31 +257,22 @@ public class ChannelActivity extends AppCompatActivity
             }
         });
 
-        if (ContextCompat.checkSelfPermission(ChannelActivity.this,
-                Manifest.permission.RECORD_AUDIO)
-                != PackageManager.PERMISSION_GRANTED) {
-
-            // Should we show an explanation?
-            if (ActivityCompat.shouldShowRequestPermissionRationale(ChannelActivity.this,
-                    Manifest.permission.RECORD_AUDIO)) {
-
-                // Show an expanation to the user *asynchronously* -- don't block
-                // this thread waiting for the user's response! After the user
-                // sees the explanation, try again to request the permission.
-
-            } else {
-
-                // No explanation needed, we can request the permission.
-
-                ActivityCompat.requestPermissions(ChannelActivity.this,
-                        new String[]{Manifest.permission.RECORD_AUDIO},
-                        REQUEST_RECORD_AUDIO);
-
-                // MY_PERMISSIONS_REQUEST_READ_CONTACTS is an
-                // app-defined int constant. The callback method gets the
-                // result of the request.
-            }
+        if (ActivityCompat.checkSelfPermission(ChannelActivity.this,
+                Manifest.permission.RECORD_AUDIO) !=
+                PackageManager.PERMISSION_GRANTED && ActivityCompat.checkSelfPermission(ChannelActivity.this,
+                Manifest.permission.WRITE_EXTERNAL_STORAGE) !=
+                PackageManager.PERMISSION_GRANTED) {
+            Log.d(LOG_TAG, "requesting permissions for starting");
+            ActivityCompat.requestPermissions(ChannelActivity.this, AUDIO_PERMISSIONS, REQUEST_RECORD_AUDIO);
+            return;
         }
+
+        AssetManager am = ChannelActivity.this.getApplicationContext().getAssets();
+
+        Typeface typeface = Typeface.createFromAsset(am,
+                String.format(Locale.US, "fonts/%s", "Lato-Regular.ttf"));
+
+        textview.setTypeface(typeface);
     }
 
     public void openBottomSheet() {
@@ -517,6 +517,7 @@ public class ChannelActivity extends AppCompatActivity
         if (isGranted && requestCode == LocationUtils.REQUEST_CODE) {
             LocationUtils.startLocationUpdates(this);
         }
+        super.onRequestPermissionsResult(requestCode, permissions, grantResults);
     }
 
     @Override
@@ -788,6 +789,24 @@ public class ChannelActivity extends AppCompatActivity
                     mPhotoUrl, null, stickerCode);
             MessageUtil.send(chatMessage, mChannelName);
             StickersManager.onUserMessageSent(true);
+        }
+    }
+
+    public  boolean isStoragePermissionGranted() {
+        if (Build.VERSION.SDK_INT >= 23) {
+            if (checkSelfPermission(android.Manifest.permission.WRITE_EXTERNAL_STORAGE)
+                    == PackageManager.PERMISSION_GRANTED) {
+                Log.v(TAG,"Permission is granted");
+                return true;
+            } else {
+                Log.v(TAG,"Permission is revoked");
+                ActivityCompat.requestPermissions(this, new String[]{Manifest.permission.WRITE_EXTERNAL_STORAGE}, 1);
+                return false;
+            }
+        }
+        else { //permission is automatically granted on sdk<23 upon installation
+            Log.v(TAG,"Permission is granted");
+            return true;
         }
     }
 }
