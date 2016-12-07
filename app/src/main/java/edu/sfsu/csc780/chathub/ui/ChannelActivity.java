@@ -266,13 +266,6 @@ public class ChannelActivity extends AppCompatActivity
             ActivityCompat.requestPermissions(ChannelActivity.this, AUDIO_PERMISSIONS, REQUEST_RECORD_AUDIO);
             return;
         }
-
-        AssetManager am = ChannelActivity.this.getApplicationContext().getAssets();
-
-        Typeface typeface = Typeface.createFromAsset(am,
-                String.format(Locale.US, "fonts/%s", "Lato-Regular.ttf"));
-
-        textview.setTypeface(typeface);
     }
 
     public void openBottomSheet() {
