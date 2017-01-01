@@ -1,3 +1,2 @@
-# chathub-android
-SFSU CSC 780
-This is the repo for the Android ChatHub app.
+# ChatHub
+Firebase Android chat application that supports Google sign-in, sending text, images, location, audio, stickers, and hand drawn messages.
